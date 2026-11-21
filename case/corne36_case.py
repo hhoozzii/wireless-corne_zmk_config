@@ -72,7 +72,9 @@ def grid_for(poly, pad, r):
 
 
 def to_mesh(solid, gx, gy, gz, r, rz):
-    v, f, _, _ = marching_cubes(solid.astype(np.float32), 0.0, spacing=(r, r, rz))
+    s = solid.astype(np.float32)
+    s[np.abs(s) < 2e-3] = 2e-3            # no samples exactly on the surface -> no zero-area triangles
+    v, f, _, _ = marching_cubes(s, 0.0, spacing=(r, r, rz))
     v += np.array([gx[0], gy[0], gz[0]])
     v[:, 1] *= -1                       # KiCad y-down -> y-up (stays a LEFT half)
     if signed_volume(v, f) < 0:

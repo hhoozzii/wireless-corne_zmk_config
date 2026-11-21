@@ -4,10 +4,10 @@ Low-profile tray for the Boardsource board with the outer pinky column broken of
 
 ![preview](preview.png)
 
-* **Board outline** is extracted from Boardsource's product photo (clean background), scaled with the
-  19.05 mm key grid (residual 0.06 mm), left/right halves averaged, cut at the breakaway mouse-bite line.
-  Screw holes, USB-C and power switch were measured from a photo of the actual board.
-  `outline_on_product.png` shows the case over the product photo (`tools/` has the extraction scripts).
+* **Board geometry** (outline, 5 mounting holes, USB-C, power switch) is extracted from Boardsource's high-res
+  product photos of both sides (~7.7 px/mm), scaled with the 19.05 mm key grid (residual <0.1 mm), three halves
+  averaged, cut at the breakaway mouse-bite line. `case_on_boardsource_photos.png` shows the case drawn over
+  both photos; `tools/` has the extraction scripts. The mounting holes measure ~4.2-4.8 mm, not M2.
   The Boardsource outline and screw holes differ from the standard crkbd ones.
 * **Print `corne36_fit_test_pair.3mf` first** (0.8 mm frame, ~10 min): lay the PCB on it bottom-side down,
   check that the edge sits inside the rim and that M2 screws drop through the PCB holes into the ring holes.
