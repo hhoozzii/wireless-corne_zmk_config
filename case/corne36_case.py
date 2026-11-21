@@ -34,6 +34,12 @@ P = dict(
     pin_chamfer=0.5,    # lead-in chamfer at the pin top
     shoulder_d=5.4,     # support ring under the PCB (socket tabs sit ~3 mm from some hole centres)
     screw_d=1.7,        # M2 self-tapping pilot in the screw posts (M2 x 8 + 5 mm washer)
+    # --- top cover: thin plate lying on the PCB inside the wall, cut out around each switch
+    cover_t=1.0,        # thickness (wall rises 1.2 mm above the PCB, so it sits 0.2 mm below the wall top)
+    cover_gap=0.3,      # gap between cover edge and case wall
+    key_cut=15.6,       # square cutout per switch (Choc v2 housing passes a 15.5 mm opening)
+    cover_screw_d=2.4,  # clearance for the M2 screws, which clamp cover + PCB
+    min_web=1.2,        # remove cover features narrower than this
     usb_w=13.0,         # USB-C plug opening width (typical overmold 12 mm)
     usb_floor=3.0,      # USB opening goes down to this z (plug body ~6.5 mm tall)
     pwr_w=10.0,         # power switch opening width
@@ -172,6 +178,39 @@ def build_fit_test(d, p=P, t=0.8):
     return to_mesh(solid, gx, gy, gz, r, 0.1)
 
 
+def rbox_sdf(X, Y, cx, cy, w, h, deg):
+    t = np.radians(deg); dx, dy = X - cx, Y - cy
+    u, v = dx * np.cos(t) + dy * np.sin(t), -dx * np.sin(t) + dy * np.cos(t)
+    return box_sdf(u, v, -w / 2, w / 2, -h / 2, h / 2)
+
+
+def build_cover(d, p=P):
+    """Thin top cover: lies on the PCB inside the case wall, square cutouts around every switch,
+    open over the controller strip (USB-C, display/battery window, power switch, reset), a channel
+    for the battery wires, and clearance holes where the two M2 screws clamp cover + PCB."""
+    r = 0.1617
+    gx, gy, X, Y = grid_for(d['outline'], p['cut_extra'] + 3, r)
+    s_pcb = poly_sdf(d['outline'], X, Y)
+    (cx0, cy0), (cx1, cy1) = d['cut']; xcut = min(cx0, cx1)
+    cutzone = box_sdf(X, Y, xcut - p['cut_extra'], xcut + 4, min(cy0, cy1) + 1.0, max(cy0, cy1) - 1.0)
+    plate = np.minimum(s_pcb, cutzone) - (p['clearance'] - p['cover_gap'])
+    holes = [rbox_sdf(X, Y, kx, ky, p['key_cut'], p['key_cut'], a) for kx, ky, a in d['keys']]
+    (ox0, oy0), (ox1, oy1) = d['controller_opening']; holes.append(box_sdf(X, Y, ox0, ox1, oy0, oy1))
+    (bx0, by0), (bx1, by1) = d['battery_wire_channel']; holes.append(box_sdf(X, Y, bx0, bx1, by0, by1))
+    holes += [circ_sdf(X, Y, hx, hy, p['cover_screw_d'] / 2) for hx, hy in d['screw_holes']]
+    shape = np.maximum(plate, -np.min(holes, 0))
+    # drop anything narrower than min_web (wedges where an opening meets a cutout at an angle)
+    from scipy import ndimage as ndi
+    from skimage.morphology import opening, disk
+    m = opening(shape < 0, disk(int(round(p['min_web'] / 2 / r))))
+    shape = 0.0371 + (ndi.distance_transform_edt(~m) - ndi.distance_transform_edt(m)) * r
+    t = p['cover_t']
+    gz = np.arange(-0.4, t + 0.4, 0.1) + 0.0437
+    Z = gz[None, None, :]
+    solid = np.maximum(shape[..., None], np.maximum(-Z, Z - t))
+    return to_mesh(solid, gx, gy, gz, r, 0.1), (gx, gy, shape)
+
+
 # ---------------------------------------------------------------- output
 def mirror_x(v, f):
     v = v.copy(); v[:, 0] *= -1
@@ -229,6 +268,10 @@ if __name__ == '__main__':
     tv, tf = build_fit_test(d)
     write_stl(os.path.join(outdir, 'corne36_fit_test_half.stl'), tv, tf, 'corne36 fit test half')
     write_3mf(os.path.join(outdir, 'corne36_fit_test_half.3mf'), [('corne36 fit test half', tv, tf)])
-    info = dict(meta=meta, tris=len(f), bbox=[v.min(0).round(2).tolist(), v.max(0).round(2).tolist()], fit_tris=len(tf))
+    (cv, cf), cgrid = build_cover(d)
+    np.savez_compressed(os.path.join(outdir, '_cover2d.npz'), gx=cgrid[0], gy=cgrid[1], shape=cgrid[2])
+    write_stl(os.path.join(outdir, 'corne36_cover_half.stl'), cv, cf, 'corne36 top cover half')
+    write_3mf(os.path.join(outdir, 'corne36_cover_half.3mf'), [('corne36 top cover half', cv, cf)])
+    info = dict(meta=meta, tris=len(f), bbox=[v.min(0).round(2).tolist(), v.max(0).round(2).tolist()], fit_tris=len(tf), cover_tris=len(cf))
     json.dump(dict(info, params=P), open(os.path.join(outdir, 'build_info.json'), 'w'), indent=1)
     print(json.dumps(info))

@@ -27,6 +27,13 @@ mirrored in the slicer for the other side (same for the fit-test frame).
   * Wall rises 1.2 mm above the PCB top; keycaps clear it bottomed out.
   * Five 10 x 0.8 mm recesses for rubber feet.
 
+* **Top cover** `corne36_cover_half.3mf` (optional): a 1 mm plate that lies on the PCB inside the wall and hides
+  the board between the keys. 15.6 mm square cutouts around every switch (thumbs at 0 / 15 / 30 degrees), open
+  over the controller strip (USB-C, display + battery, power switch, reset) with a channel for the battery wires.
+  The two M2 screws go through it, so they clamp cover + PCB together; no features narrower than 1.2 mm.
+  Pull the switches, lay the cover on the PCB, push the switches back in. ~3 g PLA, prints flat.
+  `cover_on_top_photo.png` shows it over Boardsource's top-side photo.
+
 Regenerate after editing `P` in `corne36_case.py` (needs numpy, scikit-image, matplotlib):
 
     python3 corne36_case.py boardsource_outline.json out
