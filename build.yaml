@@ -34,5 +34,6 @@ include:
   # then flash the normal firmware again.
   - board: blecorne_left
     shield: settings_reset
+    cmake-args: -DCONFIG_ZMK_DISPLAY=n   # blecorne.conf enables the display; no screen in this build
   - board: nice_nano//zmk
     shield: settings_reset
