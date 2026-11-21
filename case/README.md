@@ -12,7 +12,7 @@ Low-profile tray for the Boardsource board with the outer pinky column broken of
 * Case: `corne36_case_pair.3mf` (left + right). Print floor-down, no supports. ~32 g PLA per half.
   * 5 posts at the board's M2 holes, 1.7 mm pilot for M2 self-tapping screws (6 mm). `screw_d=3.2` for heat inserts.
   * 0.7 mm clearance; 1 mm extra room along the broken-off edge.
-  * 3.5 mm under the PCB for sockets and the nRF module; battery bay under the battery window goes 1.2 mm deeper.
+  * 3.5 mm under the PCB for sockets and the nRF module, flat floor. The battery (301230, 3 x 12 x 30 mm) sits on top of the PCB under the nice!view, so the case has no battery space.
   * Openings for USB-C (top edge of the controller strip) and the power slide switch (inner edge).
   * Wall rises 1.2 mm above the PCB top; keycaps clear it bottomed out.
   * Five 10 x 0.8 mm recesses for rubber feet.

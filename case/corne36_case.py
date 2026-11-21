@@ -3,7 +3,7 @@
 Low-profile tray case for the Boardsource Wireless Corne SMT (v1.01) with the
 outer pinky column broken off -> 36 keys. Kailh Choc v2 switches, MX keycaps.
 
-Board geometry (outline, screw holes, battery notch, USB-C, power switch) was
+Board geometry (outline, screw holes, display window, USB-C, power switch) was
 traced from a photo of the PCB and scaled with the 19.05 mm key grid
 (boardsource_outline.json, KiCad-style coords: LEFT half seen from the top,
 x right, y down). Expected accuracy ~0.3-0.5 mm, so print the fit-test plate first.
@@ -30,7 +30,7 @@ P = dict(
     usb_w=13.0,         # USB-C plug opening width (typical overmold 12 mm)
     usb_floor=3.0,      # USB opening goes down to this z (plug body ~6.5 mm tall)
     pwr_w=10.0,         # power switch opening width
-    batt_extra_depth=1.2,  # battery bay sinks into the floor (501430 is 5 mm thick, foam tape adds more)
+    # battery (301230, 3x12x30 mm) sits on top of the PCB under the nice!view: nothing needed in the case
     feet=[(-108.0, -8.0), (-105.5, 28.0), (-62.0, 44.0), (-22.0, 45.0), (-40.0, -14.0)],
     foot_d=10.0, foot_depth=0.8,
     res_xy=0.25, res_z=0.25,
@@ -100,8 +100,8 @@ def build(d, p=P):
     cutzone = box_sdf(X, Y, xcut - p['cut_extra'], xcut + 4, min(cy0, cy1) + 1.0, max(cy0, cy1) - 1.0)
     nx0, nx1 = notch[:, 0].min(), notch[:, 0].max() + 3
     ny0, ny1 = notch[:, 1].min(), notch[:, 1].max()
-    bay = box_sdf(X, Y, nx0 + 0.6, nx1, ny0 + 0.6, ny1 - 0.6) - 0.6       # battery notch, rounded corners
-    board = np.minimum(np.minimum(s_pcb, cutzone), bay)                  # board + rough edge + bay
+    bay = box_sdf(X, Y, nx0 + 0.6, nx1, ny0 + 0.6, ny1 - 0.6) - 0.6       # display/battery window in the PCB (no ledge there)
+    board = np.minimum(s_pcb, cutzone)                                   # board + rough edge
     cavity = board - p['clearance']
     outer = board - p['clearance'] - p['wall']
 
@@ -110,7 +110,7 @@ def build(d, p=P):
     usb = box_sdf(X, Y, ux - p['usb_w'] / 2, ux + p['usb_w'] / 2, uy - 10, uy + 4)
     pwr = box_sdf(X, Y, px_ - 5, px_ + 10, py_ - p['pwr_w'] / 2, py_ + p['pwr_w'] / 2)
 
-    # ledge band under the PCB edge; not on the inner (controller/module) edge, battery bay or thumb tip
+    # ledge band under the PCB edge; not on the inner (controller/module) edge, the window or thumb tip
     band = np.maximum(cavity, -(s_pcb + p['ledge']))
     no_ledge = np.minimum.reduce([box_sdf(X, Y, -12, 20, -40, 80), bay - 0.5, usb, pwr,
                                   box_sdf(X, Y, -40, 0, 50, 90)])
@@ -131,7 +131,6 @@ def build(d, p=P):
     solid = np.minimum(solid, E(stand, 0, z_pb))
     solid = np.maximum(solid, -E(usb, p['usb_floor'], z_top + 5))
     solid = np.maximum(solid, -E(pwr, z_pb - 1.0, z_top + 5))
-    solid = np.maximum(solid, -E(bay, p['floor'] - p['batt_extra_depth'], z_top + 5))
     solid = np.maximum(solid, -E(screw, -5, z_top + 5))
     solid = np.maximum(solid, -E(feet, -5, p['foot_depth']))
     v, f = to_mesh(solid, gx, gy, gz, r, p['res_z'])
