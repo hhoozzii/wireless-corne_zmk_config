@@ -2,7 +2,10 @@
 
 This fork uses the [Miryoku](https://github.com/manna-harbour/miryoku) layout with QWERTY alphas,
 from [hhoozzii/miryoku_zmk](https://github.com/hhoozzii/miryoku_zmk) (copied into `config/miryoku/`).
-Miryoku uses 36 keys (3x5 per half + 3 thumbs); the Corne's outer columns are unused.
+Miryoku uses 36 keys (3x5 per half + 3 thumbs). This build is for a Corne with the outer pinky
+columns cut off: the keymaps use the board's 5-column layout (`foostan_corne_5col_layout`) and the
+36-key mapping in `config/miryoku/mapping/36/corne_5col.h`. (To go back to a full 6-column board,
+include `mapping/42/corne.h` and `&foostan_corne_6col_layout` instead.)
 
 * Layout options: `config/miryoku/custom_config.h` (alphas, Mac clipboard, vi nav, flip...)
 * Boardsource Wireless Corne SMT: `config/blecorne.keymap` / `blecorne.conf`
