@@ -1,86 +1,55 @@
 #!/usr/bin/env python3
 """
-Low-profile tray case for a Boardsource Wireless Corne SMT with the outer
-(pinky) column cut off -> 36 keys. Kailh Choc v2 switches, MX keycaps.
+Low-profile tray case for the Boardsource Wireless Corne SMT (v1.01) with the
+outer pinky column broken off -> 36 keys. Kailh Choc v2 switches, MX keycaps.
 
-Geometry source: foostan/crkbd 3x6 bottom-plate outline (standard Corne/CRKBD
-outline, which the Boardsource PCB is compatible with). The outline is clipped
-at the column-0 / column-1 boundary where the board was cut.
+Board geometry (outline, screw holes, battery notch, USB-C, power switch) was
+traced from a photo of the PCB and scaled with the 19.05 mm key grid
+(boardsource_outline.json, KiCad-style coords: LEFT half seen from the top,
+x right, y down). Expected accuracy ~0.3-0.5 mm, so print the fit-test plate first.
 
-Usage:  python3 corne36_case.py [outline.json] [outdir]
-Needs:  numpy, scikit-image, matplotlib (for point-in-polygon)
-
-All dimensions in mm. Coordinates below are crkbd/KiCad coordinates of the
-LEFT half seen from the top (x to the right, y DOWN, as in KiCad).
+Usage:  python3 corne36_case.py [boardsource_outline.json] [outdir]
+Needs:  numpy, scikit-image, matplotlib
 """
-import json, math, os, struct, sys, zipfile
+import json, os, struct, sys, zipfile
 import numpy as np
 from matplotlib.path import Path
 from skimage.measure import marching_cubes
 
-# ---------------------------------------------------------------- parameters
 P = dict(
-    # --- where the PCB was cut (KiCad x). Column 0/1 boundary = -119.06.
-    cut_x=-119.06,
-    cut_extra=2.0,      # room for a rough cut: PCB may stick out up to this far past the boundary
-    clearance=0.5,      # gap between PCB edge and wall on the other sides
+    clearance=0.7,      # gap PCB edge -> wall
+    cut_extra=1.0,      # extra room past the broken-off edge (rough cut)
     wall=2.4,           # wall thickness (6 perimeters at 0.4)
     floor=2.0,          # floor thickness
-    under_pcb=3.5,      # clearance under PCB for hotswap sockets / bottom parts
-    pcb=1.6,            # PCB thickness
-    lip=1.2,            # wall height above PCB top (hides the cut edge; keep low for choc)
-    ledge=1.0,          # how far the support ledge reaches under the PCB edge
-    standoff_d=4.4,     # standoff diameter at the 2 remaining M2 holes
-    screw_d=1.7,        # pilot hole for M2 self-tapping screw (2.0 = loose / 3.2 = heat insert M2)
-    # --- openings on the inner edge (KiCad coords)
-    usb_x=-13.3, usb_w=14.0,          # USB-C slot on the top edge of the controller area
-    pwr_y=34.6, pwr_w=14.0,           # power switch slot on the inner edge (TRRS spot on wired Cornes)
-    slot_floor=1.0,                   # slots go down to (PCB bottom - this)
-    # --- battery pocket in the floor, under the controller area
-    batt=dict(x0=-22.8, x1=-4.9, y0=-14.0, y1=19.0, depth=1.2),
-    # --- rubber feet recesses (diameter, depth) at KiCad coords
-    feet=[(-110.0, -12.0), (-110.0, 35.0), (-68.0, 47.0), (-33.0, 55.0), (-32.0, -14.0)],
+    under_pcb=3.5,      # space under PCB for hotswap sockets, switch posts, nRF module
+    pcb=1.6,
+    lip=1.2,            # wall height above PCB top (hides the cut; keycaps clear it)
+    ledge=1.0,          # support ledge reaching under the PCB edge
+    standoff_d=3.8,     # posts at the 5 screw holes
+    screw_d=1.7,        # M2 self-tapping pilot (2.2 = loose fit / 3.2 = M2 heat insert)
+    usb_w=13.0,         # USB-C plug opening width (typical overmold 12 mm)
+    usb_floor=3.0,      # USB opening goes down to this z (plug body ~6.5 mm tall)
+    pwr_w=10.0,         # power switch opening width
+    batt_extra_depth=1.2,  # battery bay sinks into the floor (501430 is 5 mm thick, foam tape adds more)
+    feet=[(-108.0, -8.0), (-105.5, 28.0), (-62.0, 44.0), (-22.0, 45.0), (-40.0, -14.0)],
     foot_d=10.0, foot_depth=0.8,
-    # --- mesh resolution
     res_xy=0.25, res_z=0.25,
 )
-HOLES_KEPT = [(-43.278346, 38.498363), (-43.271782, -0.794121)]   # the two cut-off holes at x=-119.46 are gone
 
 
-# ---------------------------------------------------------------- 2D helpers
-def clip_halfplane_x(poly, xmin):
-    """Sutherland-Hodgman clip of a closed polygon to x >= xmin."""
-    out = []
-    n = len(poly)
-    for i in range(n):
-        a, b = poly[i], poly[(i + 1) % n]
-        ina, inb = a[0] >= xmin, b[0] >= xmin
-        if ina:
-            out.append(a)
-        if ina != inb:
-            t = (xmin - a[0]) / (b[0] - a[0])
-            out.append((xmin, a[1] + t * (b[1] - a[1])))
-    return out
-
-
+# ---------------------------------------------------------------- 2D SDF helpers
 def poly_sdf(poly, X, Y):
-    """Exact signed distance to a closed polygon (negative inside)."""
     pts = np.stack([X.ravel(), Y.ravel()], 1)
-    A = np.array(poly)
-    B = np.roll(A, -1, 0)
+    A = np.array(poly, float); B = np.roll(A, -1, 0)
     d2 = np.full(len(pts), np.inf)
-    for s in range(0, len(A), 64):
-        a, b = A[s:s + 64], B[s:s + 64]
-        ab = b - a
-        L = (ab ** 2).sum(1)
-        L[L == 0] = 1e-12
+    for s in range(0, len(A), 32):
+        a, b = A[s:s + 32], B[s:s + 32]
+        ab = b - a; L = (ab ** 2).sum(1); L[L == 0] = 1e-12
         ap = pts[:, None, :] - a[None]
         t = np.clip((ap * ab[None]).sum(2) / L[None], 0, 1)
         q = a[None] + t[..., None] * ab[None]
         d2 = np.minimum(d2, ((pts[:, None, :] - q) ** 2).sum(2).min(1))
-    inside = Path(A).contains_points(pts)
-    d = np.sqrt(d2)
-    d[inside] *= -1
+    d = np.sqrt(d2); d[Path(A).contains_points(pts)] *= -1
     return d.reshape(X.shape)
 
 
@@ -94,68 +63,22 @@ def circ_sdf(X, Y, cx, cy, r):
     return np.hypot(X - cx, Y - cy) - r
 
 
-# ---------------------------------------------------------------- build
-def build(outline, p=P):
-    z_pcb_bot = p['floor'] + p['under_pcb']
-    z_pcb_top = z_pcb_bot + p['pcb']
-    z_top = z_pcb_top + p['lip']
-
-    cav_poly = clip_halfplane_x(outline, p['cut_x'] - p['cut_extra'])   # PCB incl. rough edge
-    pcb_poly = clip_halfplane_x(outline, p['cut_x'])                   # nominal PCB
-
-    off = p['clearance'] + p['wall'] + 2.0
-    xs = np.array([q[0] for q in cav_poly]); ys = np.array([q[1] for q in cav_poly])
-    r = p['res_xy']
-    gx = np.arange(xs.min() - off, xs.max() + off, r) + r * 0.37   # off-grid so flat faces never sit on samples
-    gy = np.arange(ys.min() - off, ys.max() + off, r) + r * 0.29
+def grid_for(poly, pad, r):
+    a = np.array(poly)
+    gx = np.arange(a[:, 0].min() - pad, a[:, 0].max() + pad, r) + r * 0.37   # off-grid: no faces on samples
+    gy = np.arange(a[:, 1].min() - pad, a[:, 1].max() + pad, r) + r * 0.29
     X, Y = np.meshgrid(gx, gy, indexing='ij')
+    return gx, gy, X, Y
 
-    s_cav = poly_sdf(cav_poly, X, Y)
-    s_pcb = poly_sdf(pcb_poly, X, Y)
 
-    cavity = s_cav - p['clearance']                       # <0 inside the pocket the PCB drops into
-    outer = s_cav - p['clearance'] - p['wall']            # <0 inside the case footprint
-    inner_edge_x = xs.max()                               # x of the straight inner edge (-4.26)
-    top_y = -17.17                                        # top edge of controller area
-
-    # openings (2D, KiCad coords)
-    usb = box_sdf(X, Y, p['usb_x'] - p['usb_w'] / 2, p['usb_x'] + p['usb_w'] / 2, top_y - 10, top_y + 3)
-    pwr = box_sdf(X, Y, inner_edge_x - 3, inner_edge_x + 10, p['pwr_y'] - p['pwr_w'] / 2, p['pwr_y'] + p['pwr_w'] / 2)
-    slots = np.minimum(usb, pwr)
-
-    # ledge region: in the pocket but outside the PCB shrunk by `ledge`, not in slots
-    ledge = np.maximum(np.maximum(cavity, -(s_pcb + p['ledge'])), -slots)
-
-    stand = np.min([circ_sdf(X, Y, hx, hy, p['standoff_d'] / 2) for hx, hy in HOLES_KEPT], 0)
-    screw = np.min([circ_sdf(X, Y, hx, hy, p['screw_d'] / 2) for hx, hy in HOLES_KEPT], 0)
-    b = p['batt']
-    batt = box_sdf(X, Y, b['x0'], b['x1'], b['y0'], b['y1']) - 0.0
-    feet = np.min([circ_sdf(X, Y, fx, fy, p['foot_d'] / 2) for fx, fy in p['feet']], 0)
-
-    gz = np.arange(-1.0, z_top + 1.0, p['res_z']) + p['res_z'] * 0.43
-    Z = gz[None, None, :]
-    E = lambda s2, z0, z1: np.maximum(s2[..., None], np.maximum(z0 - Z, Z - z1))   # extrusion
-
-    solid = E(outer, 0, z_top)
-    solid = np.maximum(solid, -E(cavity, p['floor'], z_top + 5))                    # pocket
-    solid = np.minimum(solid, E(np.maximum(ledge, outer), 0, z_pcb_bot))            # support ledge
-    solid = np.minimum(solid, E(stand, 0, z_pcb_bot))                               # standoffs
-    solid = np.maximum(solid, -E(slots, z_pcb_bot - p['slot_floor'], z_top + 5))    # USB / power slots
-    solid = np.maximum(solid, -E(screw, -5, z_top + 5))                              # screw pilot holes
-    solid = np.maximum(solid, -E(batt, p['floor'] - b['depth'], z_top + 5))        # battery pocket
-    solid = np.maximum(solid, -E(feet, -5, p['foot_depth']))                        # feet recesses
-
-    verts, faces, _, _ = marching_cubes(solid.astype(np.float32), 0.0, spacing=(r, r, p['res_z']))
-    verts += np.array([gx[0], gy[0], gz[0]])
-    verts[:, 1] *= -1                       # KiCad y-down -> y-up (keeps it a LEFT half)
-    faces = faces[:, ::-1]                  # flipping one axis reverses winding; restore outward normals
-    # marching_cubes on a "solid<0" field gives normals pointing toward +field (outward) already;
-    # we checked orientation via signed volume below.
-    vol = signed_volume(verts, faces)
-    if vol < 0:
-        faces = faces[:, ::-1]
-    meta = dict(z_pcb_bot=z_pcb_bot, z_pcb_top=z_pcb_top, z_top=z_top)
-    return verts, faces, meta, (gx, gy, gz, solid)
+def to_mesh(solid, gx, gy, gz, r, rz):
+    v, f, _, _ = marching_cubes(solid.astype(np.float32), 0.0, spacing=(r, r, rz))
+    v += np.array([gx[0], gy[0], gz[0]])
+    v[:, 1] *= -1                       # KiCad y-down -> y-up (stays a LEFT half)
+    if signed_volume(v, f) < 0:
+        f = f[:, ::-1]
+    v[:, 2] -= v[:, 2].min()
+    return v, f
 
 
 def signed_volume(v, f):
@@ -163,6 +86,77 @@ def signed_volume(v, f):
     return np.einsum('ij,ij->i', a, np.cross(b, c)).sum() / 6.0
 
 
+# ---------------------------------------------------------------- case
+def build(d, p=P):
+    pcb = d['outline']; notch = np.array(d['notch'])
+    z_pb = p['floor'] + p['under_pcb']; z_pt = z_pb + p['pcb']; z_top = z_pt + p['lip']
+    r = p['res_xy']
+    gx, gy, X, Y = grid_for(pcb, p['clearance'] + p['wall'] + p['cut_extra'] + 3, r)
+
+    s_pcb = poly_sdf(pcb, X, Y)
+    # rough cut edge: allow cut_extra beyond the traced cut line (runs along y at x ~ -117..-119.6)
+    (cx0, cy0), (cx1, cy1) = d['cut']
+    xcut = min(cx0, cx1)
+    cutzone = box_sdf(X, Y, xcut - p['cut_extra'], xcut + 4, min(cy0, cy1) + 1.0, max(cy0, cy1) - 1.0)
+    nx0, nx1 = notch[:, 0].min(), notch[:, 0].max() + 3
+    ny0, ny1 = notch[:, 1].min(), notch[:, 1].max()
+    bay = box_sdf(X, Y, nx0 + 0.6, nx1, ny0 + 0.6, ny1 - 0.6) - 0.6       # battery notch, rounded corners
+    board = np.minimum(np.minimum(s_pcb, cutzone), bay)                  # board + rough edge + bay
+    cavity = board - p['clearance']
+    outer = board - p['clearance'] - p['wall']
+
+    # openings
+    ux, uy = d['usb']; px_, py_ = d['pwr']
+    usb = box_sdf(X, Y, ux - p['usb_w'] / 2, ux + p['usb_w'] / 2, uy - 10, uy + 4)
+    pwr = box_sdf(X, Y, px_ - 5, px_ + 10, py_ - p['pwr_w'] / 2, py_ + p['pwr_w'] / 2)
+
+    # ledge band under the PCB edge; not on the inner (controller/module) edge, battery bay or thumb tip
+    band = np.maximum(cavity, -(s_pcb + p['ledge']))
+    no_ledge = np.minimum.reduce([box_sdf(X, Y, -12, 20, -40, 80), bay - 0.5, usb, pwr,
+                                  box_sdf(X, Y, -40, 0, 50, 90)])
+    ledge = np.maximum(band, -no_ledge)
+
+    holes = d['holes']
+    stand = np.min([circ_sdf(X, Y, hx, hy, p['standoff_d'] / 2) for hx, hy in holes], 0)
+    screw = np.min([circ_sdf(X, Y, hx, hy, p['screw_d'] / 2) for hx, hy in holes], 0)
+    feet = np.min([circ_sdf(X, Y, fx, fy, p['foot_d'] / 2) for fx, fy in p['feet']], 0)
+
+    gz = np.arange(-1.0, z_top + 1.0, p['res_z']) + p['res_z'] * 0.43
+    Z = gz[None, None, :]
+    E = lambda s2, z0, z1: np.maximum(s2[..., None], np.maximum(z0 - Z, Z - z1))
+
+    solid = E(outer, 0, z_top)
+    solid = np.maximum(solid, -E(cavity, p['floor'], z_top + 5))
+    solid = np.minimum(solid, E(np.maximum(ledge, outer), 0, z_pb))
+    solid = np.minimum(solid, E(stand, 0, z_pb))
+    solid = np.maximum(solid, -E(usb, p['usb_floor'], z_top + 5))
+    solid = np.maximum(solid, -E(pwr, z_pb - 1.0, z_top + 5))
+    solid = np.maximum(solid, -E(bay, p['floor'] - p['batt_extra_depth'], z_top + 5))
+    solid = np.maximum(solid, -E(screw, -5, z_top + 5))
+    solid = np.maximum(solid, -E(feet, -5, p['foot_depth']))
+    v, f = to_mesh(solid, gx, gy, gz, r, p['res_z'])
+    return v, f, dict(z_pcb_bot=z_pb, z_pcb_top=z_pt, z_top=round(z_top, 2)), (gx, gy, gz, solid)
+
+
+def build_fit_test(d, p=P, t=0.8):
+    """Flat 0.8 mm frame: a rim following the case wall (PCB outline + clearance) plus rings with
+    2.2 mm holes at the screw positions, joined by spokes. Lay the PCB on it (bottom side down)
+    to check the outline and that M2 screws pass through PCB and ring holes."""
+    r = 0.213
+    gx, gy, X, Y = grid_for(d['outline'], 5, r)
+    s = poly_sdf(d['outline'], X, Y)
+    rim = np.maximum(s - p['clearance'] - 1.6, -(s + 2.0))       # from 2 mm inside the edge to the wall line
+    rings = [circ_sdf(X, Y, hx, hy, 3.0) for hx, hy in d['holes']]
+    spokes = [np.maximum(box_sdf(X, Y, hx - 1.0, hx + 1.0, -90, 90), s - 0.5) for hx, _ in d['holes']]
+    shape = np.minimum.reduce([rim] + rings + spokes)
+    shape = 0.0123 + np.maximum(shape, -np.min([circ_sdf(X, Y, hx, hy, 1.1) for hx, hy in d['holes']], 0))
+    gz = np.arange(-0.5, t + 0.5, 0.1) + 0.0437
+    Z = gz[None, None, :]
+    solid = np.maximum(shape[..., None], np.maximum(-Z, Z - t))
+    return to_mesh(solid, gx, gy, gz, r, 0.1)
+
+
+# ---------------------------------------------------------------- output
 def mirror_x(v, f):
     v = v.copy(); v[:, 0] *= -1
     return v, f[:, ::-1].copy()
@@ -175,13 +169,10 @@ def write_stl(path, v, f, name):
     rec = np.zeros(len(f), dtype=[('n', '<f4', 3), ('v', '<f4', (3, 3)), ('a', '<u2')])
     rec['n'] = n; rec['v'] = tri
     with open(path, 'wb') as fh:
-        fh.write(name.encode()[:80].ljust(80, b' '))
-        fh.write(struct.pack('<I', len(f)))
-        fh.write(rec.tobytes())
+        fh.write(name.encode()[:80].ljust(80, b' ')); fh.write(struct.pack('<I', len(f))); fh.write(rec.tobytes())
 
 
 def write_3mf(path, parts):
-    """parts: list of (name, verts, faces). Each placed side by side as its own object."""
     objs, items = [], []
     for i, (name, v, f) in enumerate(parts, 1):
         vs = '\n'.join(f'<vertex x="{x:.4f}" y="{y:.4f}" z="{z:.4f}"/>' for x, y, z in v)
@@ -198,31 +189,33 @@ def write_3mf(path, parts):
     rels = ('<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             '<Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>')
     with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as z:
-        z.writestr('[Content_Types].xml', ct)
-        z.writestr('_rels/.rels', rels)
-        z.writestr('3D/3dmodel.model', model)
+        z.writestr('[Content_Types].xml', ct); z.writestr('_rels/.rels', rels); z.writestr('3D/3dmodel.model', model)
+
+
+def side_by_side(vl, fl, gap=6):
+    vr, fr = mirror_x(vl, fl)
+    a = vl - [vl[:, 0].max() + gap / 2, 0, 0]
+    b = vr - [vr[:, 0].min() - gap / 2, 0, 0]
+    return [('left', a, fl), ('right', b, fr)]
 
 
 if __name__ == '__main__':
-    src = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), 'crkbd_outline.json')
+    here = os.path.dirname(os.path.abspath(__file__))
+    src = sys.argv[1] if len(sys.argv) > 1 else os.path.join(here, 'boardsource_outline.json')
     outdir = sys.argv[2] if len(sys.argv) > 2 else 'out'
     os.makedirs(outdir, exist_ok=True)
-    outline = [tuple(q) for q in json.load(open(src))['loops'][0]]
-    if math.dist(outline[0], outline[-1]) < 1e-6:
-        outline = outline[:-1]
-    v, f, meta, grid = build(outline)
+    d = json.load(open(src))
+    v, f, meta, grid = build(d)
     np.savez_compressed(os.path.join(outdir, '_grid.npz'), gx=grid[0], gy=grid[1], gz=grid[2], solid=grid[3])
-    # place the bottom at z=0 and centre each half for printing
-    v[:, 2] -= v[:, 2].min()
-    vl = v.copy()
     vr, fr = mirror_x(v, f)
-    write_stl(os.path.join(outdir, 'corne36_case_left.stl'), vl, f, 'corne36 case left')
+    write_stl(os.path.join(outdir, 'corne36_case_left.stl'), v, f, 'corne36 case left')
     write_stl(os.path.join(outdir, 'corne36_case_right.stl'), vr, fr, 'corne36 case right')
-    # 3MF with both halves side by side
-    w = vl[:, 0].max() - vl[:, 0].min()
-    vl2 = vl - [vl[:, 0].max() + 5, 0, 0]
-    vr2 = vr - [vr[:, 0].min() - 5, 0, 0]
-    write_3mf(os.path.join(outdir, 'corne36_case_pair.3mf'), [('left', vl2, f), ('right', vr2, fr)])
-    json.dump(dict(meta=meta, params=P, tris=len(f), bbox=[v.min(0).tolist(), v.max(0).tolist()]),
-              open(os.path.join(outdir, 'build_info.json'), 'w'), indent=1)
-    print(json.dumps(dict(meta=meta, tris=len(f), bbox=[v.min(0).round(2).tolist(), v.max(0).round(2).tolist()])))
+    write_3mf(os.path.join(outdir, 'corne36_case_pair.3mf'), side_by_side(v, f))
+    tv, tf = build_fit_test(d)
+    write_3mf(os.path.join(outdir, 'corne36_fit_test_pair.3mf'), side_by_side(tv, tf))
+    tvr, tfr = mirror_x(tv, tf)
+    write_stl(os.path.join(outdir, 'corne36_fit_test_left.stl'), tv, tf, 'fit test left')
+    write_stl(os.path.join(outdir, 'corne36_fit_test_right.stl'), tvr, tfr, 'fit test right')
+    info = dict(meta=meta, tris=len(f), bbox=[v.min(0).round(2).tolist(), v.max(0).round(2).tolist()], fit_tris=len(tf))
+    json.dump(dict(info, params=P), open(os.path.join(outdir, 'build_info.json'), 'w'), indent=1)
+    print(json.dumps(info))
