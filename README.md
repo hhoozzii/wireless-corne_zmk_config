@@ -1,3 +1,21 @@
+# Miryoku (QWERTY) layout
+
+This fork uses the [Miryoku](https://github.com/manna-harbour/miryoku) layout with QWERTY alphas,
+from [hhoozzii/miryoku_zmk](https://github.com/hhoozzii/miryoku_zmk) (copied into `config/miryoku/`).
+Miryoku uses 36 keys (3x5 per half + 3 thumbs); the Corne's outer columns are unused.
+
+* Layout options: `config/miryoku/custom_config.h` (alphas, Mac clipboard, vi nav, flip...)
+* Boardsource Wireless Corne SMT: `config/blecorne.keymap` / `blecorne.conf`
+* Classic Corne on nice!nano v2: `config/corne.keymap` / `corne.conf`
+
+**Getting firmware:** every push runs GitHub Actions. Open the Actions tab, pick the latest run,
+download the `firmware` artifact and unzip it. Flash only the pair for your hardware:
+`blecorne_left` / `blecorne_right` for the Boardsource PCB, or `corne_left` / `corne_right`
+(nice_nano) for nice!nanos. Double-tap reset to mount the USB drive, then copy the `.uf2` onto it.
+Flash `settings_reset` to both halves first if they don't pair with each other.
+
+---
+
 # Boardsource Wireless Corne SMT Firmware
 
 This repository contains the official ZMK configuration for the **Wireless Corne SMT**. This PCB is designed for a seamless, cable-free experience with full support for ZMK Studio.

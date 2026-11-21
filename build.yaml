@@ -1,7 +1,19 @@
-# Uncomment the 'shield: nice_view' lines below if you are using nice!view displays.
-# Additionally, you should enable the display feature in 'config/blecorne.conf'.
+# Miryoku (QWERTY) firmware builds.
+#
+# Boardsource Wireless Corne SMT (controller built into the PCB):
+#   flash the blecorne_left file -> left half, blecorne_right -> right half
+#
+# Classic Corne with nice!nano v2 controllers:
+#   flash the corne_left file -> left half, corne_right -> right half
+#
+# Flash only the pair that matches your hardware. The left half is the "central"
+# that talks to your computer; ZMK Studio runs over USB on the left half.
+#
+# For nice!view displays, add the display shields and set CONFIG_ZMK_DISPLAY=y
+# in the matching .conf file.
 ---
 include:
+  # --- Boardsource Wireless Corne SMT ---
   - board: blecorne_left
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
@@ -9,9 +21,18 @@ include:
   - board: blecorne_right
     # shield: nice_view
 
-  # Uncomment the following to build a "settings reset" firmware
-  # to clear persistent settings (bluetooth connections, etc).
-  # - board: blecorne_left
-  #   shield: settings_reset
-  # - board: blecorne_right
-  #   shield: settings_reset
+  # --- Classic Corne + nice!nano v2 ---
+  - board: nice_nano//zmk
+    shield: corne_left
+    snippet: studio-rpc-usb-uart
+    cmake-args: -DCONFIG_ZMK_STUDIO=y
+  - board: nice_nano//zmk
+    shield: corne_right
+
+  # --- Settings reset ---
+  # Flash to both halves if they stop pairing with each other or a host,
+  # then flash the normal firmware again.
+  - board: blecorne_left
+    shield: settings_reset
+  - board: nice_nano//zmk
+    shield: settings_reset
