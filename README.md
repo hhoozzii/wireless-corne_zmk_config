@@ -15,7 +15,9 @@ Miryoku uses 36 keys (3x5 per half + 3 thumbs); the Corne's outer columns are un
   * Set `CONFIG_NICE_VIEW_CUSTOM_INVERTED=y` in the `.conf` for white-on-black.
   * Plug the nice!view into header pins 3–7 (MOSI, SCK, VCC, GND, CS) with the screen facing up.
 
-**Getting firmware:** every push runs GitHub Actions. Open the Actions tab, pick the latest run,
+**Getting firmware:** every push runs GitHub Actions. (On a fork, Actions stays off until you open the
+Actions tab and click "I understand my workflows, go ahead and enable them"; after that use
+"Run workflow" or push any change.) Open the Actions tab, pick the latest run,
 download the `firmware` artifact and unzip it. Flash only the pair for your hardware:
 `blecorne_left` / `blecorne_right` for the Boardsource PCB, or `corne_left` / `corne_right`
 (nice_nano) for nice!nanos. Double-tap reset to mount the USB drive, then copy the `.uf2` onto it.
