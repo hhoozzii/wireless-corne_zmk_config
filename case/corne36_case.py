@@ -31,7 +31,7 @@ P = dict(
     usb_floor=3.0,      # USB opening goes down to this z (plug body ~6.5 mm tall)
     pwr_w=10.0,         # power switch opening width
     # battery (301230, 3x12x30 mm) sits on top of the PCB under the nice!view: nothing needed in the case
-    feet=[(-108.0, -8.0), (-105.5, 28.0), (-62.0, 44.0), (-22.0, 45.0), (-40.0, -14.0)],
+    feet=[(-108.0, -8.0), (-105.5, 28.0), (-62.0, 44.0), (-22.0, 45.0), (-40.0, -10.0)],
     foot_d=10.0, foot_depth=0.8,
     res_xy=0.25, res_z=0.25,
 )
@@ -141,14 +141,14 @@ def build_fit_test(d, p=P, t=0.8):
     """Flat 0.8 mm frame: a rim following the case wall (PCB outline + clearance) plus rings with
     2.2 mm holes at the screw positions, joined by spokes. Lay the PCB on it (bottom side down)
     to check the outline and that M2 screws pass through PCB and ring holes."""
-    r = 0.213
+    r = 0.2117
     gx, gy, X, Y = grid_for(d['outline'], 5, r)
     s = poly_sdf(d['outline'], X, Y)
     rim = np.maximum(s - p['clearance'] - 1.6, -(s + 2.0))       # from 2 mm inside the edge to the wall line
     rings = [circ_sdf(X, Y, hx, hy, 3.0) for hx, hy in d['holes']]
     spokes = [np.maximum(box_sdf(X, Y, hx - 1.0, hx + 1.0, -90, 90), s - 0.5) for hx, _ in d['holes']]
     shape = np.minimum.reduce([rim] + rings + spokes)
-    shape = 0.0123 + np.maximum(shape, -np.min([circ_sdf(X, Y, hx, hy, 1.1) for hx, hy in d['holes']], 0))
+    shape = 0.0371 + np.maximum(shape, -np.min([circ_sdf(X, Y, hx, hy, 1.1) for hx, hy in d['holes']], 0))
     gz = np.arange(-0.5, t + 0.5, 0.1) + 0.0437
     Z = gz[None, None, :]
     solid = np.maximum(shape[..., None], np.maximum(-Z, Z - t))
