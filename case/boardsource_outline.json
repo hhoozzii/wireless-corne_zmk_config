@@ -1,5 +1,5 @@
 {
- "source": "Outline, mounting holes, USB-C and power switch: extracted from Boardsource's high-res product photos (bottom and top side, ~7.7 px/mm), scaled by the 19.05 mm key grid (residual <0.1 mm), three board halves averaged, cut at the breakaway mouse-bite line x=-119.05, battery window and USB-C shell filled. KiCad-style coords of the LEFT half seen from the top (x right, y down).",
+ "source": "All geometry from Boardsource's two high-res product photos (bottom side and top side, ~7.7 px/mm), scaled by the 19.05 mm key grid (residual <0.1 mm), three board halves averaged, cut at the breakaway mouse-bite line x=-119.05, display/battery window and USB-C shell filled. KiCad-style coords of the LEFT half seen from the top.",
  "outline": [
   [
    -1.928,
@@ -990,20 +990,20 @@
  ],
  "notch": [
   [
-   -23.35,
-   22.5
+   -23.65000000000559,
+   -15.049999999999816
   ],
   [
-   -22.54,
-   -8.41
+   -2.1500000000068127,
+   -15.049999999999816
   ],
   [
-   -2.84,
-   -8.02
+   -2.1500000000068127,
+   25.95000000000077
   ],
   [
-   -3.83,
-   23.01
+   -23.65000000000559,
+   25.95000000000077
   ]
  ],
  "usb": [
@@ -1046,5 +1046,16 @@
  "reset_top_side": [
   -10.6,
   38.75
- ]
+ ],
+ "screw_holes": [
+  [
+   -75.74,
+   38.7
+  ],
+  [
+   -29.17,
+   46.32
+  ]
+ ],
+ "screw_holes_note": "Only these two holes have room on the top side for an M2 washer (5 mm); the other three sit ~1.9 mm from the switch housings and get locating pins only."
 }

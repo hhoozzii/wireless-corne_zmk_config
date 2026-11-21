@@ -3,10 +3,12 @@
 Low-profile tray case for the Boardsource Wireless Corne SMT (v1.01) with the
 outer pinky column broken off -> 36 keys. Kailh Choc v2 switches, MX keycaps.
 
-Board geometry (outline, screw holes, display window, USB-C, power switch) was
-traced from a photo of the PCB and scaled with the 19.05 mm key grid
-(boardsource_outline.json, KiCad-style coords: LEFT half seen from the top,
-x right, y down). Expected accuracy ~0.3-0.5 mm, so print the fit-test plate first.
+Board geometry (outline, mounting holes, display window, USB-C, power switch) was
+extracted from Boardsource's high-res product photos (top and bottom side) and scaled
+with the 19.05 mm key grid (boardsource_outline.json, KiCad-style coords: LEFT half
+seen from the top, x right, y down). Expected accuracy ~0.2-0.4 mm, so print the
+fit-test frame first. Only one half is generated: the board is symmetric, so mirror
+the part in the slicer for the other side.
 
 Usage:  python3 corne36_case.py [boardsource_outline.json] [outdir]
 Needs:  numpy, scikit-image, matplotlib
@@ -25,8 +27,13 @@ P = dict(
     pcb=1.6,
     lip=1.2,            # wall height above PCB top (hides the cut; keycaps clear it)
     ledge=1.0,          # support ledge reaching under the PCB edge
-    standoff_d=3.8,     # posts at the 5 screw holes
-    screw_d=1.7,        # M2 self-tapping pilot (2.2 = loose fit / 3.2 = M2 heat insert)
+    # mounting holes are ~4.2-4.8 mm (no grommets): a pin locates the board in each hole, a shoulder under the
+    # PCB supports it; M2 screw + washer only where the switches leave room for the washer ('screw_holes')
+    pin_d=3.6,          # pin through the PCB hole (smallest hole measured 4.24 mm)
+    pin_below_top=0.3,  # pin stops this far below the PCB top surface so the washer clamps the board
+    pin_chamfer=0.5,    # lead-in chamfer at the pin top
+    shoulder_d=5.4,     # support ring under the PCB (socket tabs sit ~3 mm from some hole centres)
+    screw_d=1.7,        # M2 self-tapping pilot in the screw posts (M2 x 8 + 5 mm washer)
     usb_w=13.0,         # USB-C plug opening width (typical overmold 12 mm)
     usb_floor=3.0,      # USB opening goes down to this z (plug body ~6.5 mm tall)
     pwr_w=10.0,         # power switch opening width
@@ -119,8 +126,9 @@ def build(d, p=P):
     ledge = np.maximum(band, -no_ledge)
 
     holes = d['holes']
-    stand = np.min([circ_sdf(X, Y, hx, hy, p['standoff_d'] / 2) for hx, hy in holes], 0)
-    screw = np.min([circ_sdf(X, Y, hx, hy, p['screw_d'] / 2) for hx, hy in holes], 0)
+    shoulder = np.min([circ_sdf(X, Y, hx, hy, p['shoulder_d'] / 2) for hx, hy in holes], 0)
+    pin_r = np.min([circ_sdf(X, Y, hx, hy, 0) for hx, hy in holes], 0)          # distance to nearest hole centre
+    screw = np.min([circ_sdf(X, Y, hx, hy, p['screw_d'] / 2) for hx, hy in d.get('screw_holes', holes)], 0)
     feet = np.min([circ_sdf(X, Y, fx, fy, p['foot_d'] / 2) for fx, fy in p['feet']], 0)
 
     gz = np.arange(-1.0, z_top + 1.0, p['res_z']) + p['res_z'] * 0.43
@@ -130,7 +138,10 @@ def build(d, p=P):
     solid = E(outer, 0, z_top)
     solid = np.maximum(solid, -E(cavity, p['floor'], z_top + 5))
     solid = np.minimum(solid, E(np.maximum(ledge, outer), 0, z_pb))
-    solid = np.minimum(solid, E(stand, 0, z_pb))
+    solid = np.minimum(solid, E(shoulder, 0, z_pb))
+    z_pin = z_pt - p['pin_below_top']
+    rz = p['pin_d'] / 2 - np.clip(Z - (z_pin - p['pin_chamfer']), 0, None)        # chamfered pin radius
+    solid = np.minimum(solid, np.maximum(pin_r[..., None] - rz, np.maximum(0 - Z, Z - z_pin)))
     solid = np.maximum(solid, -E(usb, p['usb_floor'], z_top + 5))
     solid = np.maximum(solid, -E(pwr, z_pb - 1.0, z_top + 5))
     solid = np.maximum(solid, -E(screw, -5, z_top + 5))
@@ -140,9 +151,9 @@ def build(d, p=P):
 
 
 def build_fit_test(d, p=P, t=0.8):
-    """Flat 0.8 mm frame: a rim following the case wall (PCB outline + clearance) plus rings with
-    2.2 mm holes at the screw positions, joined by spokes. Lay the PCB on it (bottom side down)
-    to check the outline and that M2 screws pass through PCB and ring holes."""
+    """Flat 0.8 mm frame: a rim following the case wall (PCB outline + clearance) plus rings with the same
+    pins as the case at the mounting holes, joined by spokes. Lower the PCB onto it (bottom side down):
+    the pins should drop into the holes and the board edge should sit inside the rim."""
     r = 0.2117
     gx, gy, X, Y = grid_for(d['outline'], 5, r)
     s = poly_sdf(d['outline'], X, Y)
@@ -150,10 +161,14 @@ def build_fit_test(d, p=P, t=0.8):
     rings = [circ_sdf(X, Y, hx, hy, 3.0) for hx, hy in d['holes']]
     spokes = [np.maximum(box_sdf(X, Y, hx - 1.0, hx + 1.0, -90, 90), s - 0.5) for hx, _ in d['holes']]
     shape = np.minimum.reduce([rim] + rings + spokes)
-    shape = 0.0371 + np.maximum(shape, -np.min([circ_sdf(X, Y, hx, hy, 1.1) for hx, hy in d['holes']], 0))
-    gz = np.arange(-0.5, t + 0.5, 0.1) + 0.0437
+    shape = 0.0371 + shape
+    ph = t + 3.0                                                     # pins stand 3 mm above the frame
+    gz = np.arange(-0.5, ph + 0.5, 0.1) + 0.0437
     Z = gz[None, None, :]
     solid = np.maximum(shape[..., None], np.maximum(-Z, Z - t))
+    pin_r = np.min([circ_sdf(X, Y, hx, hy, 0) for hx, hy in d['holes']], 0)
+    rz = p['pin_d'] / 2 - np.clip(Z - (ph - p['pin_chamfer']), 0, None)
+    solid = np.minimum(solid, np.maximum(pin_r[..., None] - rz, np.maximum(-Z, Z - ph)))
     return to_mesh(solid, gx, gy, gz, r, 0.1)
 
 
@@ -208,15 +223,12 @@ if __name__ == '__main__':
     d = json.load(open(src))
     v, f, meta, grid = build(d)
     np.savez_compressed(os.path.join(outdir, '_grid.npz'), gx=grid[0], gy=grid[1], gz=grid[2], solid=grid[3])
-    vr, fr = mirror_x(v, f)
-    write_stl(os.path.join(outdir, 'corne36_case_left.stl'), v, f, 'corne36 case left')
-    write_stl(os.path.join(outdir, 'corne36_case_right.stl'), vr, fr, 'corne36 case right')
-    write_3mf(os.path.join(outdir, 'corne36_case_pair.3mf'), side_by_side(v, f))
+    # one half (the left one); the board is symmetric, so mirror it in the slicer for the right side
+    write_stl(os.path.join(outdir, 'corne36_case_half.stl'), v, f, 'corne36 case half (left, mirror for right)')
+    write_3mf(os.path.join(outdir, 'corne36_case_half.3mf'), [('corne36 case half', v, f)])
     tv, tf = build_fit_test(d)
-    write_3mf(os.path.join(outdir, 'corne36_fit_test_pair.3mf'), side_by_side(tv, tf))
-    tvr, tfr = mirror_x(tv, tf)
-    write_stl(os.path.join(outdir, 'corne36_fit_test_left.stl'), tv, tf, 'fit test left')
-    write_stl(os.path.join(outdir, 'corne36_fit_test_right.stl'), tvr, tfr, 'fit test right')
+    write_stl(os.path.join(outdir, 'corne36_fit_test_half.stl'), tv, tf, 'corne36 fit test half')
+    write_3mf(os.path.join(outdir, 'corne36_fit_test_half.3mf'), [('corne36 fit test half', tv, tf)])
     info = dict(meta=meta, tris=len(f), bbox=[v.min(0).round(2).tolist(), v.max(0).round(2).tolist()], fit_tris=len(tf))
     json.dump(dict(info, params=P), open(os.path.join(outdir, 'build_info.json'), 'w'), indent=1)
     print(json.dumps(info))

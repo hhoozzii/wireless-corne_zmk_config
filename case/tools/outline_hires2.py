@@ -51,6 +51,9 @@ stack=np.array(masks,float); avg=stack.mean(0)
 for i,k in enumerate(Ts): print(k,'disagreement vs mean mm2: %.1f'%(np.abs(stack[i]-(avg>0.5)).sum()*0.0025))
 b=avg>0.5
 hull=morphology.convex_hull_image(b); box=(MX>-27)&(MX<1)&(MY>-19)&(MY<26); b2=b|(hull&box)
+wl=measure.label((b2&~b)&box); wr=max(measure.regionprops(wl),key=lambda r:r.area)
+window=[[float(mx[wr.bbox[0]]),float(my[wr.bbox[1]])],[float(mx[wr.bbox[2]-1]),float(my[wr.bbox[3]-1])]]
+print('display/battery window bbox mm',np.round(window,2),'area mm2 %.0f'%(wr.area*0.0025))
 c=max(measure.find_contours(ndi.gaussian_filter(b2.astype(float),1.5),0.5),key=len)
 poly=np.c_[np.interp(c[:,0],np.arange(len(mx)),mx),np.interp(c[:,1],np.arange(len(my)),my)]
 poly=measure.approximate_polygon(poly,0.05)[:-1]
@@ -62,7 +65,7 @@ for h in H:
     else: groups.append([h])
 hol=[np.mean(gp,0).round(2).tolist()+[len(gp)] for gp in groups]
 print('holes seen in >=2 of 3 halves (x, y, dia, n):'); [print('  ',h) for h in sorted(hol) if h[3]>=2]
-json.dump(dict(outline=poly.round(3).tolist(),holes=[h[:3] for h in hol if h[3]>=2]),open('photo/hires2.json','w'))
+json.dump(dict(window=window,outline=poly.round(3).tolist(),holes=[h[:3] for h in hol if h[3]>=2]),open('photo/hires2.json','w'))
 [np.save(f'photo/hires2_T_{k}.npy',v[0].params) for k,v in Ts.items()]
 prev=np.array(json.load(open('boardsource_outline.json'))['outline'])
 dd=C.poly_sdf(poly.tolist(),prev[:,0][:,None],prev[:,1][:,None]).ravel()
