@@ -7,6 +7,9 @@ Miryoku uses 36 keys (3x5 per half + 3 thumbs); the Corne's outer columns are un
 * Layout options: `config/miryoku/custom_config.h` (alphas, Mac clipboard, vi nav, flip...)
 * Boardsource Wireless Corne SMT: `config/blecorne.keymap` / `blecorne.conf`
 * Classic Corne on nice!nano v2: `config/corne.keymap` / `corne.conf`
+* nice!view displays are on for both halves (`CONFIG_ZMK_DISPLAY=y`; shields in `build.yaml`).
+  The left screen shows the Miryoku layer name, Bluetooth profile and battery; the right shows its battery.
+  Plug the nice!view into header pins 3–7 (MOSI, SCK, VCC, GND, CS) with the screen facing up.
 
 **Getting firmware:** every push runs GitHub Actions. Open the Actions tab, pick the latest run,
 download the `firmware` artifact and unzip it. Flash only the pair for your hardware:

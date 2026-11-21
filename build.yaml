@@ -9,25 +9,25 @@
 # Flash only the pair that matches your hardware. The left half is the "central"
 # that talks to your computer; ZMK Studio runs over USB on the left half.
 #
-# For nice!view displays, add the display shields and set CONFIG_ZMK_DISPLAY=y
-# in the matching .conf file.
+# nice!view displays are enabled on both halves (left shows layer/BLE/battery,
+# right shows its battery and connection to the left half).
 ---
 include:
   # --- Boardsource Wireless Corne SMT ---
   - board: blecorne_left
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
-    # shield: nice_view
+    shield: nice_view
   - board: blecorne_right
-    # shield: nice_view
+    shield: nice_view
 
   # --- Classic Corne + nice!nano v2 ---
   - board: nice_nano//zmk
-    shield: corne_left
+    shield: corne_left nice_view_adapter nice_view
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
   - board: nice_nano//zmk
-    shield: corne_right
+    shield: corne_right nice_view_adapter nice_view
 
   # --- Settings reset ---
   # Flash to both halves if they stop pairing with each other or a host,
