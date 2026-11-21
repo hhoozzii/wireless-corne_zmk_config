@@ -32,5 +32,5 @@ for img,path,halves in [('bottom','/mnt/user-data/uploads/a0aaf1d9-image.jpg',['
 W=out[0].width; canvas=Image.new('RGB',(W,out[0].height+out[1].height+60),'white')
 canvas.paste(out[0],(0,0)); canvas.paste(out[1],(0,out[0].height+60))
 ImageDraw.Draw(canvas).text((20,out[0].height+15),"top: bottom side   below: top side   |   magenta = board edge   yellow = case inner wall   cyan = case outside   green = screw posts   red = USB-C / power-switch openings",fill=(0,0,0))
-canvas.save('out7/case_on_boardsource_photos.png')
-canvas.resize((W//2,canvas.height//2),Image.LANCZOS).save('out7/case_on_boardsource_photos_small.png')
+canvas.save('out9/case_on_boardsource_photos.png')
+canvas.resize((W//2,canvas.height//2),Image.LANCZOS).save('out9/case_on_boardsource_photos_small.png')

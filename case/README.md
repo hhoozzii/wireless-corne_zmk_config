@@ -6,9 +6,11 @@ mirrored in the slicer for the other side (same for the fit-test frame).
 
 ![preview](preview.png)
 
-* **Board geometry** (outline, 5 mounting holes, USB-C, power switch) is extracted from Boardsource's two
-  high-res product photos (bottom and top side, ~7.7 px/mm), scaled with the 19.05 mm key grid
-  (residual <0.1 mm), three board halves averaged, cut at the breakaway mouse-bite line.
+* **Board outline** is a clean polygon (straight edges, square column steps, straight cut and inner edges);
+  each edge position is measured from Boardsource's two high-res product photos (~7.7 px/mm, scaled with the
+  19.05 mm key grid). The cut edge sits on the breakaway mouse-bite line; the USB-C shell and power-switch nub
+  are left out of the outline (the case has openings for them). Mounting holes, USB-C and power switch are
+  measured from the same photos (`tools/clean_outline.py`, `tools/outline_hires2.py`).
   `case_on_boardsource_photos.png` shows the case drawn over both photos; `tools/` has the extraction
   scripts (point them at the two photos).
 * **Print `corne36_fit_test_half.3mf` first** (0.8 mm frame with the case's pins, ~10 min): lower the PCB onto it

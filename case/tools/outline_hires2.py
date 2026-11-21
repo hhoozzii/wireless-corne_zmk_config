@@ -49,7 +49,7 @@ for iname,cfg in IMGS.items():
         masks.append(ndi.binary_fill_holes(bb))
 stack=np.array(masks,float); avg=stack.mean(0)
 for i,k in enumerate(Ts): print(k,'disagreement vs mean mm2: %.1f'%(np.abs(stack[i]-(avg>0.5)).sum()*0.0025))
-b=avg>0.5
+b=avg>0.5; np.save('photo/hires2_mask.npy',b); np.save('photo/hires2_grid.npy',np.array([mx[0],my[0],0.05]))
 hull=morphology.convex_hull_image(b); box=(MX>-27)&(MX<1)&(MY>-19)&(MY<26); b2=b|(hull&box)
 wl=measure.label((b2&~b)&box); wr=max(measure.regionprops(wl),key=lambda r:r.area)
 window=[[float(mx[wr.bbox[0]]),float(my[wr.bbox[1]])],[float(mx[wr.bbox[2]-1]),float(my[wr.bbox[3]-1])]]
