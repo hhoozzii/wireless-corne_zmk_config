@@ -417,10 +417,12 @@ LAYERS = [
     ('MOUSE', True,
      [CLIP, [None, '@left', '@down', '@up', '@right'], [None, '@scr_l', '@scr_d', '@scr_u', '@scr_r']],
      [[K] * 5, [N, K, K, K, K], [N, K, K, K, K]], [('@mouse_r', K), ('@mouse_l', K), ('@mouse_m', K)], 'HOLD TAB'),
+    # RGB row and external-power toggle do nothing on this board (no LEDs, no switched power):
+    # left blank as unused -> free for a later piano layer
     ('MEDIA', True,
      [['@sun', '~FX', '~HUE', '~SAT', '~BRI'], ['@bolt', '@prev', '@voldn', '@volup', '@next'],
       ['@usb', '~B0', '~B1', '~B2', '~B3']],
-     [[K] * 5] * 3, [('@stop', K), ('@play', K), ('@mute', K)], 'HOLD ESC'),
+     [[N] * 5, [N, K, K, K, K], [K] * 5], [('@stop', K), ('@play', K), ('@mute', K)], 'HOLD ESC'),
     ('NUM', True,
      [['[', '7', '8', '9', ']'], [';', '4', '5', '6', '='], ['`', '1', '2', '3', '\\']],
      [[K] * 5] * 3, [('.', K), ('0', K), ('-', K)], 'LEFT HAND'),
