@@ -74,7 +74,7 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     draw_battery(canvas, state);
 
     // output: symbol top right, "USB" / "BLE n" and its state below the battery
-    char line[12] = {};
+    char line[16] = {};
     const char *status = "";
     if (state->selected_endpoint.transport == ZMK_TRANSPORT_USB) {
         canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &symbol_dsc, LV_SYMBOL_USB);
