@@ -22,7 +22,8 @@ mirrored in the slicer for the other side (same for the fit-test frame).
     M2 x 8 screw + M2 washer (5 mm OD) into the 1.7 mm pilot. The other three holes sit ~1.9 mm from the
     switch housings, so there is no room for a washer there; they are pins only.
   * Hardware per half: 2x M2 x 8 screw (self-tapping or machine), 2x M2 washer (DIN 125, 5 mm OD).
-  * 0.7 mm clearance to the board edge, 1 mm extra along the broken-off edge.
+  * 0.7 mm clearance to the board edge, 1 mm extra along the broken-off edge. No support ledge on the
+    broken-off edge: its hotswap sockets reach the board edge (the ledge elsewhere reaches 1 mm under the PCB).
   * 3.5 mm under the PCB for sockets and the nRF module, flat floor. The battery (301230, 3 x 12 x 30 mm)
     sits on top of the PCB under the nice!view, so the case needs no battery space.
   * Openings for USB-C (top edge of the controller strip) and the power slide switch (inner edge).

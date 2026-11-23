@@ -27,7 +27,8 @@ P = dict(
     pcb=1.6,
     lip=1.2,            # wall height above PCB top (hides the cut; keycaps clear it)
     ledge=1.0,          # support ledge reaching under the PCB edge
-    cut_ledge=0.0,      # ...but only this far on the broken-off (outer) edge: its hotswap sockets sit right there
+    cut_ledge=-3.0,     # broken-off (outer) edge: no ledge at all (its hotswap sockets reach the board edge);
+                        # the ledge band starts this far from the cut line, so -3 clears the whole gap
     # mounting holes are ~4.2-4.8 mm (no grommets): a pin locates the board in each hole, a shoulder under the
     # PCB supports it; M2 screw + washer only where the switches leave room for the washer ('screw_holes')
     pin_d=3.6,          # pin through the PCB hole (smallest hole measured 4.24 mm)
