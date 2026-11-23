@@ -6,8 +6,8 @@
  * Layout (portrait, 68 x 160):
  *   top     battery + link to the left half, link state, layer name
  *           (outlined on Base, inverted while a layer is held)
- *   middle  key map of the active Miryoku layer: right hand for layers held by a
- *           left thumb, left hand for layers held by a right thumb (Num/Sym/Fun)
+ *   middle  right hand of the active Miryoku layer (the left screen shows the left
+ *           hand); keys that do nothing on that layer are left blank
  *   bottom  hint (which hand is shown / which thumb holds the layer)
  *
  * The right half does not normally know the active layer. Layer holds use the
@@ -52,7 +52,7 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     init_label_dsc(&badge_dsc, LVGL_BACKGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
     lv_draw_label_dsc_t badge_fg_dsc;
     init_label_dsc(&badge_fg_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
-    const struct art_layer *layer = &art_layers[state->layer_shown];
+    const struct art_layer *layer = &art_layers_right[state->layer_shown];
 
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
@@ -77,10 +77,10 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
 static void draw_layer(lv_obj_t *widget, const struct status_state *state) {
     lv_obj_t *middle = lv_obj_get_child(widget, 1);
     lv_obj_t *bottom = lv_obj_get_child(widget, 2);
-    const struct art_layer *layer = &art_layers[state->layer_shown];
+    const struct art_layer *layer = &art_layers_right[state->layer_shown];
 
     lv_canvas_fill_bg(middle, LVGL_BACKGROUND, LV_OPA_COVER);
-    art_draw_keys(middle, layer);
+    art_draw_keys(middle, layer, false);
     rotate_canvas(middle);
     lv_obj_invalidate(middle);
 

@@ -126,7 +126,40 @@ static const struct {
     {'Z', {7, 1, 2, 4, 7}},
 };
 
-const struct art_layer art_layers[ART_LAYER_COUNT] = {
+const struct art_layer art_layers_left[ART_LAYER_COUNT] = {
+    {"BASE", false, "LEFT HAND",
+     {{ART_KEY, ART_TEXT, "Q", 0}, {ART_KEY, ART_TEXT, "W", 0}, {ART_KEY, ART_TEXT, "E", 0}, {ART_KEY, ART_TEXT, "R", 0}, {ART_KEY, ART_TEXT, "T", 0}, {ART_MOD, ART_TEXT, "A", 0}, {ART_MOD, ART_TEXT, "S", 0}, {ART_MOD, ART_TEXT, "D", 0}, {ART_MOD, ART_TEXT, "F", 0}, {ART_KEY, ART_TEXT, "G", 0}, {ART_KEY, ART_TEXT, "Z", 0}, {ART_KEY, ART_TEXT, "X", 0}, {ART_KEY, ART_TEXT, "C", 0}, {ART_KEY, ART_TEXT, "V", 0}, {ART_KEY, ART_TEXT, "B", 0}},
+     {{ART_KEY, ART_TINY, "MED", 0}, {ART_KEY, ART_TINY, "NAV", 0}, {ART_KEY, ART_TINY, "MOU", 0}}},
+    {"EXTRA", false, "LEFT HAND",
+     {{ART_KEY, ART_TEXT, "Q", 0}, {ART_KEY, ART_TEXT, "W", 0}, {ART_KEY, ART_TEXT, "E", 0}, {ART_KEY, ART_TEXT, "R", 0}, {ART_KEY, ART_TEXT, "T", 0}, {ART_MOD, ART_TEXT, "A", 0}, {ART_MOD, ART_TEXT, "S", 0}, {ART_MOD, ART_TEXT, "D", 0}, {ART_MOD, ART_TEXT, "F", 0}, {ART_KEY, ART_TEXT, "G", 0}, {ART_KEY, ART_TEXT, "Z", 0}, {ART_KEY, ART_TEXT, "X", 0}, {ART_KEY, ART_TEXT, "C", 0}, {ART_KEY, ART_TEXT, "V", 0}, {ART_KEY, ART_TEXT, "B", 0}},
+     {{ART_KEY, ART_TINY, "MED", 0}, {ART_KEY, ART_TINY, "NAV", 0}, {ART_KEY, ART_TINY, "MOU", 0}}},
+    {"TAP", false, "NO MODS",
+     {{ART_KEY, ART_TEXT, "Q", 0}, {ART_KEY, ART_TEXT, "W", 0}, {ART_KEY, ART_TEXT, "E", 0}, {ART_KEY, ART_TEXT, "R", 0}, {ART_KEY, ART_TEXT, "T", 0}, {ART_KEY, ART_TEXT, "A", 0}, {ART_KEY, ART_TEXT, "S", 0}, {ART_KEY, ART_TEXT, "D", 0}, {ART_KEY, ART_TEXT, "F", 0}, {ART_KEY, ART_TEXT, "G", 0}, {ART_KEY, ART_TEXT, "Z", 0}, {ART_KEY, ART_TEXT, "X", 0}, {ART_KEY, ART_TEXT, "C", 0}, {ART_KEY, ART_TEXT, "V", 0}, {ART_KEY, ART_TEXT, "B", 0}},
+     {{ART_KEY, ART_TINY, "ESC", 0}, {ART_KEY, ART_TINY, "SPC", 0}, {ART_KEY, ART_TINY, "TAB", 0}}},
+    {"BTN", false, "HOLD Z OR /",
+     {{ART_KEY, ART_ICON, NULL, ART_ICON_UNDO}, {ART_KEY, ART_ICON, NULL, ART_ICON_CUT}, {ART_KEY, ART_ICON, NULL, ART_ICON_COPY}, {ART_KEY, ART_ICON, NULL, ART_ICON_PASTE}, {ART_KEY, ART_ICON, NULL, ART_ICON_REDO}, {ART_MOD, ART_TINY, "GU", 0}, {ART_MOD, ART_TINY, "AL", 0}, {ART_MOD, ART_TINY, "CT", 0}, {ART_MOD, ART_TINY, "SH", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_ICON, NULL, ART_ICON_UNDO}, {ART_KEY, ART_ICON, NULL, ART_ICON_CUT}, {ART_KEY, ART_ICON, NULL, ART_ICON_COPY}, {ART_KEY, ART_ICON, NULL, ART_ICON_PASTE}, {ART_KEY, ART_ICON, NULL, ART_ICON_REDO}},
+     {{ART_KEY, ART_ICON, NULL, ART_ICON_MOUSE_M}, {ART_KEY, ART_ICON, NULL, ART_ICON_MOUSE_L}, {ART_KEY, ART_ICON, NULL, ART_ICON_MOUSE_R}}},
+    {"NAV", false, "HOLD SPACE",
+     {{ART_KEY, ART_TINY, "BL", 0}, {ART_KEY, ART_TINY, "TAP", 0}, {ART_KEY, ART_TINY, "EXT", 0}, {ART_KEY, ART_TINY, "BAS", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_MOD, ART_TINY, "GU", 0}, {ART_MOD, ART_TINY, "AL", 0}, {ART_MOD, ART_TINY, "CT", 0}, {ART_MOD, ART_TINY, "SH", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_TINY, "AGR", 0}, {ART_KEY, ART_TINY, "NUM", 0}, {ART_KEY, ART_TINY, "NAV", 0}, {ART_NONE, ART_EMPTY, NULL, 0}},
+     {{ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}}},
+    {"MOUSE", false, "HOLD TAB",
+     {{ART_KEY, ART_TINY, "BL", 0}, {ART_KEY, ART_TINY, "TAP", 0}, {ART_KEY, ART_TINY, "EXT", 0}, {ART_KEY, ART_TINY, "BAS", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_MOD, ART_TINY, "GU", 0}, {ART_MOD, ART_TINY, "AL", 0}, {ART_MOD, ART_TINY, "CT", 0}, {ART_MOD, ART_TINY, "SH", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_TINY, "AGR", 0}, {ART_KEY, ART_TINY, "SYM", 0}, {ART_KEY, ART_TINY, "MOU", 0}, {ART_NONE, ART_EMPTY, NULL, 0}},
+     {{ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}}},
+    {"MEDIA", false, "HOLD ESC",
+     {{ART_KEY, ART_TINY, "BL", 0}, {ART_KEY, ART_TINY, "TAP", 0}, {ART_KEY, ART_TINY, "EXT", 0}, {ART_KEY, ART_TINY, "BAS", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_MOD, ART_TINY, "GU", 0}, {ART_MOD, ART_TINY, "AL", 0}, {ART_MOD, ART_TINY, "CT", 0}, {ART_MOD, ART_TINY, "SH", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_TINY, "AGR", 0}, {ART_KEY, ART_TINY, "FUN", 0}, {ART_KEY, ART_TINY, "MED", 0}, {ART_NONE, ART_EMPTY, NULL, 0}},
+     {{ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}}},
+    {"NUM", false, "HOLD BKSP",
+     {{ART_KEY, ART_TEXT, "[", 0}, {ART_KEY, ART_TEXT, "7", 0}, {ART_KEY, ART_TEXT, "8", 0}, {ART_KEY, ART_TEXT, "9", 0}, {ART_KEY, ART_TEXT, "]", 0}, {ART_KEY, ART_TEXT, ";", 0}, {ART_KEY, ART_TEXT, "4", 0}, {ART_KEY, ART_TEXT, "5", 0}, {ART_KEY, ART_TEXT, "6", 0}, {ART_KEY, ART_TEXT, "=", 0}, {ART_KEY, ART_TEXT, "`", 0}, {ART_KEY, ART_TEXT, "1", 0}, {ART_KEY, ART_TEXT, "2", 0}, {ART_KEY, ART_TEXT, "3", 0}, {ART_KEY, ART_TEXT, "\\", 0}},
+     {{ART_KEY, ART_TEXT, ".", 0}, {ART_KEY, ART_TEXT, "0", 0}, {ART_KEY, ART_TEXT, "-", 0}}},
+    {"SYM", false, "HOLD ENTER",
+     {{ART_KEY, ART_TEXT, "{", 0}, {ART_KEY, ART_TEXT, "&", 0}, {ART_KEY, ART_ICON, NULL, ART_ICON_STAR}, {ART_KEY, ART_TEXT, "(", 0}, {ART_KEY, ART_TEXT, "}", 0}, {ART_KEY, ART_TEXT, ":", 0}, {ART_KEY, ART_TEXT, "$", 0}, {ART_KEY, ART_TEXT, "%", 0}, {ART_KEY, ART_TEXT, "^", 0}, {ART_KEY, ART_TEXT, "+", 0}, {ART_KEY, ART_TEXT, "~", 0}, {ART_KEY, ART_TEXT, "!", 0}, {ART_KEY, ART_TEXT, "@", 0}, {ART_KEY, ART_TEXT, "#", 0}, {ART_KEY, ART_TEXT, "|", 0}},
+     {{ART_KEY, ART_TEXT, "(", 0}, {ART_KEY, ART_TEXT, ")", 0}, {ART_KEY, ART_TEXT, "_", 0}}},
+    {"FUN", false, "HOLD DEL",
+     {{ART_KEY, ART_TINY, "12", 0}, {ART_KEY, ART_TINY, "7", 0}, {ART_KEY, ART_TINY, "8", 0}, {ART_KEY, ART_TINY, "9", 0}, {ART_KEY, ART_TINY, "PS", 0}, {ART_KEY, ART_TINY, "11", 0}, {ART_KEY, ART_TINY, "4", 0}, {ART_KEY, ART_TINY, "5", 0}, {ART_KEY, ART_TINY, "6", 0}, {ART_KEY, ART_TINY, "SL", 0}, {ART_KEY, ART_TINY, "10", 0}, {ART_KEY, ART_TINY, "1", 0}, {ART_KEY, ART_TINY, "2", 0}, {ART_KEY, ART_TINY, "3", 0}, {ART_KEY, ART_TINY, "PB", 0}},
+     {{ART_KEY, ART_TINY, "APP", 0}, {ART_KEY, ART_TINY, "SPC", 0}, {ART_KEY, ART_TINY, "TAB", 0}}},
+};
+
+const struct art_layer art_layers_right[ART_LAYER_COUNT] = {
     {"BASE", false, "RIGHT HAND",
      {{ART_KEY, ART_TEXT, "Y", 0}, {ART_KEY, ART_TEXT, "U", 0}, {ART_KEY, ART_TEXT, "I", 0}, {ART_KEY, ART_TEXT, "O", 0}, {ART_KEY, ART_TEXT, "P", 0}, {ART_KEY, ART_TEXT, "H", 0}, {ART_MOD, ART_TEXT, "J", 0}, {ART_MOD, ART_TEXT, "K", 0}, {ART_MOD, ART_TEXT, "L", 0}, {ART_MOD, ART_TEXT, "'", 0}, {ART_KEY, ART_TEXT, "N", 0}, {ART_KEY, ART_TEXT, "M", 0}, {ART_KEY, ART_TEXT, ",", 0}, {ART_KEY, ART_TEXT, ".", 0}, {ART_KEY, ART_TEXT, "/", 0}},
      {{ART_KEY, ART_TINY, "SYM", 0}, {ART_KEY, ART_TINY, "NUM", 0}, {ART_KEY, ART_TINY, "FUN", 0}}},
@@ -136,7 +169,7 @@ const struct art_layer art_layers[ART_LAYER_COUNT] = {
     {"TAP", false, "NO MODS",
      {{ART_KEY, ART_TEXT, "Y", 0}, {ART_KEY, ART_TEXT, "U", 0}, {ART_KEY, ART_TEXT, "I", 0}, {ART_KEY, ART_TEXT, "O", 0}, {ART_KEY, ART_TEXT, "P", 0}, {ART_KEY, ART_TEXT, "H", 0}, {ART_KEY, ART_TEXT, "J", 0}, {ART_KEY, ART_TEXT, "K", 0}, {ART_KEY, ART_TEXT, "L", 0}, {ART_KEY, ART_TEXT, "'", 0}, {ART_KEY, ART_TEXT, "N", 0}, {ART_KEY, ART_TEXT, "M", 0}, {ART_KEY, ART_TEXT, ",", 0}, {ART_KEY, ART_TEXT, ".", 0}, {ART_KEY, ART_TEXT, "/", 0}},
      {{ART_KEY, ART_ICON, NULL, ART_ICON_ENTER}, {ART_KEY, ART_ICON, NULL, ART_ICON_BKSP}, {ART_KEY, ART_ICON, NULL, ART_ICON_DEL}}},
-    {"BUTTON", false, "HOLD Z OR /",
+    {"BTN", false, "HOLD Z OR /",
      {{ART_KEY, ART_ICON, NULL, ART_ICON_REDO}, {ART_KEY, ART_ICON, NULL, ART_ICON_PASTE}, {ART_KEY, ART_ICON, NULL, ART_ICON_COPY}, {ART_KEY, ART_ICON, NULL, ART_ICON_CUT}, {ART_KEY, ART_ICON, NULL, ART_ICON_UNDO}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_MOD, ART_TINY, "SH", 0}, {ART_MOD, ART_TINY, "CT", 0}, {ART_MOD, ART_TINY, "AL", 0}, {ART_MOD, ART_TINY, "GU", 0}, {ART_KEY, ART_ICON, NULL, ART_ICON_REDO}, {ART_KEY, ART_ICON, NULL, ART_ICON_PASTE}, {ART_KEY, ART_ICON, NULL, ART_ICON_COPY}, {ART_KEY, ART_ICON, NULL, ART_ICON_CUT}, {ART_KEY, ART_ICON, NULL, ART_ICON_UNDO}},
      {{ART_KEY, ART_ICON, NULL, ART_ICON_MOUSE_R}, {ART_KEY, ART_ICON, NULL, ART_ICON_MOUSE_L}, {ART_KEY, ART_ICON, NULL, ART_ICON_MOUSE_M}}},
     {"NAV", false, "HOLD SPACE",
@@ -146,17 +179,17 @@ const struct art_layer art_layers[ART_LAYER_COUNT] = {
      {{ART_KEY, ART_ICON, NULL, ART_ICON_REDO}, {ART_KEY, ART_ICON, NULL, ART_ICON_PASTE}, {ART_KEY, ART_ICON, NULL, ART_ICON_COPY}, {ART_KEY, ART_ICON, NULL, ART_ICON_CUT}, {ART_KEY, ART_ICON, NULL, ART_ICON_UNDO}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_ICON, NULL, ART_ICON_LEFT}, {ART_KEY, ART_ICON, NULL, ART_ICON_DOWN}, {ART_KEY, ART_ICON, NULL, ART_ICON_UP}, {ART_KEY, ART_ICON, NULL, ART_ICON_RIGHT}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_ICON, NULL, ART_ICON_SCR_L}, {ART_KEY, ART_ICON, NULL, ART_ICON_SCR_D}, {ART_KEY, ART_ICON, NULL, ART_ICON_SCR_U}, {ART_KEY, ART_ICON, NULL, ART_ICON_SCR_R}},
      {{ART_KEY, ART_ICON, NULL, ART_ICON_MOUSE_R}, {ART_KEY, ART_ICON, NULL, ART_ICON_MOUSE_L}, {ART_KEY, ART_ICON, NULL, ART_ICON_MOUSE_M}}},
     {"MEDIA", false, "HOLD ESC",
-     {{ART_KEY, ART_ICON, NULL, ART_ICON_SUN}, {ART_KEY, ART_TINY, "FX", 0}, {ART_KEY, ART_TINY, "HUE", 0}, {ART_KEY, ART_TINY, "SAT", 0}, {ART_KEY, ART_TINY, "BRI", 0}, {ART_KEY, ART_ICON, NULL, ART_ICON_BOLT}, {ART_KEY, ART_ICON, NULL, ART_ICON_PREV}, {ART_KEY, ART_ICON, NULL, ART_ICON_VOLDN}, {ART_KEY, ART_ICON, NULL, ART_ICON_VOLUP}, {ART_KEY, ART_ICON, NULL, ART_ICON_NEXT}, {ART_KEY, ART_ICON, NULL, ART_ICON_USB}, {ART_KEY, ART_TINY, "B0", 0}, {ART_KEY, ART_TINY, "B1", 0}, {ART_KEY, ART_TINY, "B2", 0}, {ART_KEY, ART_TINY, "B3", 0}},
+     {{ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_ICON, NULL, ART_ICON_PREV}, {ART_KEY, ART_ICON, NULL, ART_ICON_VOLDN}, {ART_KEY, ART_ICON, NULL, ART_ICON_VOLUP}, {ART_KEY, ART_ICON, NULL, ART_ICON_NEXT}, {ART_KEY, ART_ICON, NULL, ART_ICON_USB}, {ART_KEY, ART_TINY, "B0", 0}, {ART_KEY, ART_TINY, "B1", 0}, {ART_KEY, ART_TINY, "B2", 0}, {ART_KEY, ART_TINY, "B3", 0}},
      {{ART_KEY, ART_ICON, NULL, ART_ICON_STOP}, {ART_KEY, ART_ICON, NULL, ART_ICON_PLAY}, {ART_KEY, ART_ICON, NULL, ART_ICON_MUTE}}},
-    {"NUM", true, "LEFT HAND",
-     {{ART_KEY, ART_TEXT, "[", 0}, {ART_KEY, ART_TEXT, "7", 0}, {ART_KEY, ART_TEXT, "8", 0}, {ART_KEY, ART_TEXT, "9", 0}, {ART_KEY, ART_TEXT, "]", 0}, {ART_KEY, ART_TEXT, ";", 0}, {ART_KEY, ART_TEXT, "4", 0}, {ART_KEY, ART_TEXT, "5", 0}, {ART_KEY, ART_TEXT, "6", 0}, {ART_KEY, ART_TEXT, "=", 0}, {ART_KEY, ART_TEXT, "`", 0}, {ART_KEY, ART_TEXT, "1", 0}, {ART_KEY, ART_TEXT, "2", 0}, {ART_KEY, ART_TEXT, "3", 0}, {ART_KEY, ART_TEXT, "\\", 0}},
-     {{ART_KEY, ART_TEXT, ".", 0}, {ART_KEY, ART_TEXT, "0", 0}, {ART_KEY, ART_TEXT, "-", 0}}},
-    {"SYM", true, "LEFT HAND",
-     {{ART_KEY, ART_TEXT, "{", 0}, {ART_KEY, ART_TEXT, "&", 0}, {ART_KEY, ART_ICON, NULL, ART_ICON_STAR}, {ART_KEY, ART_TEXT, "(", 0}, {ART_KEY, ART_TEXT, "}", 0}, {ART_KEY, ART_TEXT, ":", 0}, {ART_KEY, ART_TEXT, "$", 0}, {ART_KEY, ART_TEXT, "%", 0}, {ART_KEY, ART_TEXT, "^", 0}, {ART_KEY, ART_TEXT, "+", 0}, {ART_KEY, ART_TEXT, "~", 0}, {ART_KEY, ART_TEXT, "!", 0}, {ART_KEY, ART_TEXT, "@", 0}, {ART_KEY, ART_TEXT, "#", 0}, {ART_KEY, ART_TEXT, "|", 0}},
-     {{ART_KEY, ART_TEXT, "(", 0}, {ART_KEY, ART_TEXT, ")", 0}, {ART_KEY, ART_TEXT, "_", 0}}},
-    {"FUN", true, "LEFT HAND",
-     {{ART_KEY, ART_TINY, "12", 0}, {ART_KEY, ART_TINY, "7", 0}, {ART_KEY, ART_TINY, "8", 0}, {ART_KEY, ART_TINY, "9", 0}, {ART_KEY, ART_TINY, "PS", 0}, {ART_KEY, ART_TINY, "11", 0}, {ART_KEY, ART_TINY, "4", 0}, {ART_KEY, ART_TINY, "5", 0}, {ART_KEY, ART_TINY, "6", 0}, {ART_KEY, ART_TINY, "SL", 0}, {ART_KEY, ART_TINY, "10", 0}, {ART_KEY, ART_TINY, "1", 0}, {ART_KEY, ART_TINY, "2", 0}, {ART_KEY, ART_TINY, "3", 0}, {ART_KEY, ART_TINY, "PB", 0}},
-     {{ART_KEY, ART_TINY, "APP", 0}, {ART_KEY, ART_TINY, "SPC", 0}, {ART_KEY, ART_TINY, "TAB", 0}}},
+    {"NUM", false, "HOLD BKSP",
+     {{ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_TINY, "BAS", 0}, {ART_KEY, ART_TINY, "EXT", 0}, {ART_KEY, ART_TINY, "TAP", 0}, {ART_KEY, ART_TINY, "BL", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_MOD, ART_TINY, "SH", 0}, {ART_MOD, ART_TINY, "CT", 0}, {ART_MOD, ART_TINY, "AL", 0}, {ART_MOD, ART_TINY, "GU", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_TINY, "NUM", 0}, {ART_KEY, ART_TINY, "NAV", 0}, {ART_KEY, ART_TINY, "AGR", 0}, {ART_NONE, ART_EMPTY, NULL, 0}},
+     {{ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}}},
+    {"SYM", false, "HOLD ENTER",
+     {{ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_TINY, "BAS", 0}, {ART_KEY, ART_TINY, "EXT", 0}, {ART_KEY, ART_TINY, "TAP", 0}, {ART_KEY, ART_TINY, "BL", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_MOD, ART_TINY, "SH", 0}, {ART_MOD, ART_TINY, "CT", 0}, {ART_MOD, ART_TINY, "AL", 0}, {ART_MOD, ART_TINY, "GU", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_TINY, "SYM", 0}, {ART_KEY, ART_TINY, "MOU", 0}, {ART_KEY, ART_TINY, "AGR", 0}, {ART_NONE, ART_EMPTY, NULL, 0}},
+     {{ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}}},
+    {"FUN", false, "HOLD DEL",
+     {{ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_TINY, "BAS", 0}, {ART_KEY, ART_TINY, "EXT", 0}, {ART_KEY, ART_TINY, "TAP", 0}, {ART_KEY, ART_TINY, "BL", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_MOD, ART_TINY, "SH", 0}, {ART_MOD, ART_TINY, "CT", 0}, {ART_MOD, ART_TINY, "AL", 0}, {ART_MOD, ART_TINY, "GU", 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_KEY, ART_TINY, "FUN", 0}, {ART_KEY, ART_TINY, "MED", 0}, {ART_KEY, ART_TINY, "AGR", 0}, {ART_NONE, ART_EMPTY, NULL, 0}},
+     {{ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}, {ART_NONE, ART_EMPTY, NULL, 0}}},
 };
 
 
@@ -201,15 +234,7 @@ void art_draw_tiny(lv_obj_t *canvas, int x, int y, int w, const char *s, bool fg
 
 static void art_key_draw(lv_obj_t *canvas, int x, int y, int w, int h, const struct art_key *k,
                          lv_draw_label_dsc_t *fg_dsc, lv_draw_label_dsc_t *bg_dsc) {
-    if (k->kind == ART_NONE) { // dotted outline: key does nothing on this layer
-        for (int i = 0; i < w; i += 2) {
-            art_px(canvas, x + i, y, true);
-            art_px(canvas, x + i, y + h - 1, true);
-        }
-        for (int j = 0; j < h; j += 2) {
-            art_px(canvas, x, y + j, true);
-            art_px(canvas, x + w - 1, y + j, true);
-        }
+    if (k->kind == ART_NONE) { // key does nothing on this layer: left blank
         return;
     }
     const bool inv = (k->kind == ART_MOD);
@@ -233,7 +258,7 @@ static void art_key_draw(lv_obj_t *canvas, int x, int y, int w, int h, const str
     }
 }
 
-void art_draw_keys(lv_obj_t *canvas, const struct art_layer *layer) {
+void art_draw_keys(lv_obj_t *canvas, const struct art_layer *layer, bool left_screen) {
     lv_draw_label_dsc_t fg_dsc, bg_dsc;
     init_label_dsc(&fg_dsc, LVGL_FOREGROUND, &lv_font_unscii_8, LV_TEXT_ALIGN_CENTER);
     init_label_dsc(&bg_dsc, LVGL_BACKGROUND, &lv_font_unscii_8, LV_TEXT_ALIGN_CENTER);
@@ -244,10 +269,12 @@ void art_draw_keys(lv_obj_t *canvas, const struct art_layer *layer) {
                          &bg_dsc);
         }
     }
-    // thumbs fan downwards; under the inner keys (left side) for the right hand,
-    // shifted right when the left hand is shown
-    const int tx = layer->left_hand ? 0 : 20;
+    // thumbs sit under the inner columns; the inner thumb (the big angled one on a Corne) is lowest
     for (int i = 0; i < 3; i++) {
-        art_key_draw(canvas, tx + i * 16, 47 + i, 14, 14, &layer->thumbs[i], &fg_dsc, &bg_dsc);
+        if (left_screen) {
+            art_key_draw(canvas, 20 + i * 16, 47 + i, 14, 14, &layer->thumbs[i], &fg_dsc, &bg_dsc);
+        } else {
+            art_key_draw(canvas, i * 16, 49 - i, 14, 14, &layer->thumbs[i], &fg_dsc, &bg_dsc);
+        }
     }
 }

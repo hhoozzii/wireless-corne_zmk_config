@@ -46,14 +46,6 @@ config NICE_VIEW_CUSTOM_STATUS
 config NICE_VIEW_CUSTOM_INVERTED
     bool "Invert the custom status screen (white on black)"
 
-if !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
-
-config NICE_VIEW_CUSTOM_STATUS
-    select LV_FONT_MONTSERRAT_18
-    select ZMK_WPM
-
-endif # !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
-
 config ZMK_DISPLAY_STATUS_SCREEN_BUILT_IN
     select LV_FONT_MONTSERRAT_26
 

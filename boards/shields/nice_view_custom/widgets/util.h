@@ -46,6 +46,7 @@ struct status_state {
     bool profiles_connected[NICEVIEW_PROFILE_COUNT];
     bool profiles_bonded[NICEVIEW_PROFILE_COUNT];
     uint8_t layer_index;
+    uint8_t layer_id;        // Miryoku layer id of the highest active layer
     uint32_t layers_active; // bit i = layer index i is active
     const char *layer_label;
     uint8_t mods;

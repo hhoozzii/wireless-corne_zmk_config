@@ -7,10 +7,11 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_CUSTOM_STATUS)
   zephyr_library_sources(widgets/bolt.c)
   zephyr_library_sources(widgets/util.c)
 
+  zephyr_library_sources(widgets/layer_art.c)
+
   if(NOT CONFIG_ZMK_SPLIT OR CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
     zephyr_library_sources(widgets/status.c)
   else()
     zephyr_library_sources(widgets/peripheral_status.c)
-    zephyr_library_sources(widgets/layer_art.c)
   endif()
 endif()

@@ -24,9 +24,12 @@ struct art_layer {
 };
 
 #define ART_LAYER_COUNT 10
-extern const struct art_layer art_layers[ART_LAYER_COUNT];
+// Indexed by Miryoku layer id. Each screen shows its own hand of the layer.
+extern const struct art_layer art_layers_left[ART_LAYER_COUNT];
+extern const struct art_layer art_layers_right[ART_LAYER_COUNT];
 
 // Draw the key map of a layer into the middle canvas (68x68, before rotation).
-void art_draw_keys(lv_obj_t *canvas, const struct art_layer *layer);
+// left_screen mirrors the thumb fan (inner thumb on the right, lowest).
+void art_draw_keys(lv_obj_t *canvas, const struct art_layer *layer, bool left_screen);
 // 3x5 pixel text, centred in [x, x+w). fg=false draws in the background colour.
 void art_draw_tiny(lv_obj_t *canvas, int x, int y, int w, const char *s, bool fg);
