@@ -344,9 +344,14 @@ def tiny(d, x, y, w, s, ink=0):
                     d.point((x0 + i * 4 + c, y + r), fill=ink)
 
 
+SHOW_UNUSED = False   # False: keys that do nothing on a layer are left blank (free for a later piano layer)
+
+
 def key(d, x, y, label, kind='key', w=12, h=12):
     """kind: key (outline), mod (filled, inverted label), none (dotted, empty)."""
     if kind == 'none':
+        if not SHOW_UNUSED:
+            return
         for i in range(0, w, 2):
             d.point((x + i, y)); d.point((x + i, y + h - 1))
         for j in range(0, h, 2):
@@ -367,13 +372,18 @@ def key(d, x, y, label, kind='key', w=12, h=12):
         text(d, x, y + 1, w, label, ink=ink)
 
 
-def screen(layer, held, grid, kinds, thumbs, hint):
+def screen(layer, held, grid, kinds, thumbs, hint, side='right', out=('BLE', 1, 'CONNECTED')):
     im = blank(); d = ImageDraw.Draw(im)
     # --- top block (0..67): battery + link kept, layer badge replaces "corne"
     d.rectangle((2, 3, 30, 13), outline=0); d.rectangle((31, 6, 32, 10), fill=0); d.rectangle((4, 5, 22, 11), fill=0)
     text(d, 0, 2, 66, '      ' + ' ')  # spacing placeholder
-    icon(d, 56, 4, 'bt')                 # link symbol (stands in for LV_SYMBOL_WIFI)
-    text(d, 0, 22, W, 'linked')
+    if side == 'right':
+        icon(d, 56, 4, 'bt')             # link symbol (stands in for LV_SYMBOL_WIFI)
+        text(d, 0, 22, W, 'linked')
+    else:
+        icon(d, 56, 4, 'usb' if out[0] == 'USB' else 'bt')
+        text(d, 0, 20, W, 'USB' if out[0] == 'USB' else f'BLE {out[1]}')
+        tiny(d, 0, 31, W, out[2])
     if held:
         d.rectangle((0, 38, W - 1, 63), fill=0); text(d, 0, 42, W, layer, font=F16, ink=1)
     else:
@@ -383,8 +393,11 @@ def screen(layer, held, grid, kinds, thumbs, hint):
     for r in range(3):
         for c in range(5):
             key(d, c * 14, y0 + r * 14, grid[r][c], kinds[r][c])
-    for i, (lab, kd) in enumerate(thumbs):
-        key(d, i * 16 + (0 if hint.startswith('L') else 20), y0 + 45 + i, lab, kd, w=14, h=14)
+    for i, (lab, kd) in enumerate(thumbs):   # inner thumb (big, angled on a Corne) sits lowest
+        if side == 'left':
+            key(d, 20 + i * 16, y0 + 45 + i, lab, kd, w=14, h=14)
+        else:
+            key(d, i * 16, y0 + 47 - i, lab, kd, w=14, h=14)
     # --- bottom strip (136..159)
     tiny(d, 0, 148, W, hint)
     return im
@@ -423,10 +436,79 @@ LAYERS[6] = LAYERS[6][:4] + ([('~APP', K), ('~SPC', K), ('~TAB', K)],) + LAYERS[
 _by = {l[0]: l for l in LAYERS}
 EXTRA = ('EXTRA', False) + _by['BASE'][2:]
 TAP = ('TAP', False, _by['BASE'][2], [[K] * 5] * 3, [('@enter', K), ('@bksp', K), ('@del', K)], 'NO MODS')
-BUTTON = ('BUTTON', True, [CLIP, [None, '~SH', '~CT', '~AL', '~GU'], CLIP], [[K] * 5, [N, M, M, M, M], [K] * 5],
+BUTTON = ('BTN', True, [CLIP, [None, '~SH', '~CT', '~AL', '~GU'], CLIP], [[K] * 5, [N, M, M, M, M], [K] * 5],
           [('@mouse_r', K), ('@mouse_l', K), ('@mouse_m', K)], 'HOLD Z OR /')
+# ---- own-hand tables: each screen shows its own half of the active layer ----------------------
+SEL_L = ['~BL', '~TAP', '~EXT', '~BAS', None]          # bootloader, default-layer selects
+SEL_R = [None, '~BAS', '~EXT', '~TAP', '~BL']
+MODS_L = ['~GU', '~AL', '~CT', '~SH', None]
+MODS_R = [None, '~SH', '~CT', '~AL', '~GU']
+KS_L = [K, K, K, K, N]
+KS_R = [N, K, K, K, K]
+MK_L = [M, M, M, M, N]
+MK_R = [N, M, M, M, M]
+CLIP_L = ['@undo', '@cut', '@copy', '@paste', '@redo']
+NO3 = [(None, N), (None, N), (None, N)]
+
+
+def held_left(name, lock, hint):      # left hand while a LEFT-thumb layer is held: mods + selects
+    return (name, True, [SEL_L, MODS_L, [None, '~AGR', '~' + lock, '~' + name[:3], None]],
+            [KS_L, MK_L, [N, K, K, K, N]], NO3, hint)
+
+
+def held_right(name, lock, hint):     # right hand while a RIGHT-thumb layer is held
+    return (name, True, [SEL_R, MODS_R, [None, '~' + name[:3], '~' + lock, '~AGR', None]],
+            [KS_R, MK_R, [N, K, K, K, N]], NO3, hint)
+
+
+LEFT_BY_ID = [
+    ('BASE', False, [list('QWERT'), list('ASDFG'), list('ZXCVB')], [[K] * 5, [M, M, M, M, K], [K] * 5],
+     [('~MED', K), ('~NAV', K), ('~MOU', K)], 'LEFT HAND'),
+    None, None,
+    ('BTN', True, [CLIP_L, MODS_L, CLIP_L], [[K] * 5, MK_L, [K] * 5],
+     [('@mouse_m', K), ('@mouse_l', K), ('@mouse_r', K)], 'HOLD Z OR /'),
+    held_left('NAV', 'NUM', 'HOLD SPACE'), held_left('MOUSE', 'SYM', 'HOLD TAB'), held_left('MEDIA', 'FUN', 'HOLD ESC'),
+    None, None, None,
+]
+LEFT_BY_ID[1] = ('EXTRA',) + LEFT_BY_ID[0][1:]
+LEFT_BY_ID[2] = ('TAP', False, LEFT_BY_ID[0][2], [[K] * 5] * 3, [('~ESC', K), ('~SPC', K), ('~TAB', K)], 'NO MODS')
+for i, nm, hint in [(7, 'NUM', 'HOLD BKSP'), (8, 'SYM', 'HOLD ENTER'), (9, 'FUN', 'HOLD DEL')]:
+    lay = [l for l in LAYERS if l[0] == nm][0]
+    LEFT_BY_ID[i] = (nm, True, lay[2], lay[3], lay[4], hint)
+
 # Miryoku layer ids: 0 Base 1 Extra 2 Tap 3 Button 4 Nav 5 Mouse 6 Media 7 Num 8 Sym 9 Fun
 BY_ID = [_by['BASE'], EXTRA, TAP, BUTTON, _by['NAV'], _by['MOUSE'], _by['MEDIA'], _by['NUM'], _by['SYM'], _by['FUN']]
+RIGHT_BY_ID = list(BY_ID)            # own-hand version of the right screen
+RIGHT_BY_ID[7] = held_right('NUM', 'NAV', 'HOLD BKSP')
+RIGHT_BY_ID[8] = held_right('SYM', 'MOU', 'HOLD ENTER')
+RIGHT_BY_ID[9] = held_right('FUN', 'MED', 'HOLD DEL')
+
+def pairs_preview(path, S=3):
+    FG, BG = (40, 44, 38), (196, 200, 186)
+    lab = ImageFont.truetype(os.path.join(FD, 'DejaVuSans-Bold.ttf'), 18)
+    sm = ImageFont.truetype(os.path.join(FD, 'DejaVuSans.ttf'), 13)
+    order = [0, 4, 5, 6, 7, 8, 9, 3, 2, 1]
+    outs = [('BLE', 1, 'CONNECTED'), ('BLE', 1, 'CONNECTED'), ('USB', 0, ''), ('BLE', 2, 'PAIRING'), ('BLE', 1, 'CONNECTED'),
+            ('BLE', 1, 'CONNECTED'), ('BLE', 3, 'WAITING'), ('BLE', 1, 'CONNECTED'), ('BLE', 1, 'CONNECTED'), ('BLE', 1, 'CONNECTED')]
+    pw = 2 * W * S + 10; cols = 5; gap = 26
+    out = Image.new('RGB', (cols * (pw + gap) + gap, 2 * (H * S + 70) + 10), (250, 250, 248)); dd = ImageDraw.Draw(out)
+    subs = {0: 'nothing held', 1: 'default layer', 2: 'default layer', 3: 'hold Z or /', 4: 'hold Space', 5: 'hold Tab',
+            6: 'hold Esc', 7: 'hold Backspace', 8: 'hold Enter', 9: 'hold Delete'}
+    for k, lid in enumerate(order):
+        x = gap + (k % cols) * (pw + gap); y = 10 + (k // cols) * (H * S + 70)
+        for j, (side, tab) in enumerate([('left', LEFT_BY_ID), ('right', RIGHT_BY_ID)]):
+            n, h, g, kk, t, hint = tab[lid]
+            im = screen(n, h, g, kk, t, hint, side=side, out=outs[k])
+            rgb = Image.new('RGB', im.size); px = im.load(); q = rgb.load()
+            for yy in range(H):
+                for xx in range(W):
+                    q[xx, yy] = BG if px[xx, yy] else FG
+            out.paste(rgb.resize((W * S, H * S), Image.NEAREST), (x + j * (W * S + 10), y + 50))
+        dd.text((x, y + 4), tab[lid][0].title(), font=lab, fill=(20, 20, 20))
+        dd.text((x, y + 27), subs[lid] + '   (left | right)', font=sm, fill=(90, 90, 90))
+    out.save(path)
+    return out.size
+
 
 if __name__ == '__main__':
     S = 4; pad = 18
