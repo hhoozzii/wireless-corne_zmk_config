@@ -27,6 +27,8 @@ P = dict(
     pcb=1.6,
     lip=1.2,            # wall height above PCB top (hides the cut; keycaps clear it)
     ledge=1.0,          # support ledge reaching under the PCB edge
+    cut_ledge=-3.0,     # broken-off (outer) edge: no ledge at all (its hotswap sockets reach the board edge);
+                        # the ledge band starts this far from the cut line, so -3 clears the whole gap
     # mounting holes are ~4.2-4.8 mm (no grommets): a pin locates the board in each hole, a shoulder under the
     # PCB supports it; M2 screw + washer only where the switches leave room for the washer ('screw_holes')
     pin_d=3.6,          # pin through the PCB hole (smallest hole measured 4.24 mm)
@@ -128,7 +130,9 @@ def build(d, p=P):
     # ledge band under the PCB edge; not on the inner (controller/module) edge, the window or thumb tip
     band = np.maximum(cavity, -(s_pcb + p['ledge']))
     no_ledge = np.minimum.reduce([box_sdf(X, Y, -12, 20, -40, 80), bay - 0.5, usb, pwr,
-                                  box_sdf(X, Y, -40, 0, 50, 90)])
+                                  box_sdf(X, Y, -40, 0, 50, 90),
+                                  box_sdf(X, Y, xcut + p['cut_ledge'], xcut + 6,
+                                          min(cy0, cy1) - 3, max(cy0, cy1) + 3)])
     ledge = np.maximum(band, -no_ledge)
 
     holes = d['holes']
