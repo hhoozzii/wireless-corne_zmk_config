@@ -4,10 +4,15 @@
  * SPDX-License-Identifier: MIT
  *
  * Layout (portrait, 68 x 160):
- *   top     battery + link to the left half, link state, "corne" badge
- *   middle  map of the right half's Miryoku QWERTY keys; home-row mods
- *           (Shift Ctrl Alt GUI) shown inverted, thumbs drawn below
- *   bottom  "MIRYOKU"
+ *   top     battery + link to the left half, link state, layer name
+ *           (outlined on Base, inverted while a layer is held)
+ *   middle  key map of the active Miryoku layer: right hand for layers held by a
+ *           left thumb, left hand for layers held by a right thumb (Num/Sym/Fun)
+ *   bottom  hint (which hand is shown / which thumb holds the layer)
+ *
+ * The right half does not normally know the active layer. Layer holds use the
+ * &mo_sync behavior (module src/behaviors/behavior_layer_sync.c), which runs on
+ * both halves and raises zmk_layer_sync_changed here.
  */
 
 #include <zephyr/kernel.h>
@@ -25,7 +30,10 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/usb.h>
 #include <zmk/ble.h>
 
+#include <zmk_layer_sync/layer_sync_changed.h>
+
 #include "peripheral_status.h"
+#include "layer_art.h"
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -42,6 +50,9 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     init_label_dsc(&small_dsc, LVGL_FOREGROUND, &lv_font_unscii_8, LV_TEXT_ALIGN_CENTER);
     lv_draw_label_dsc_t badge_dsc;
     init_label_dsc(&badge_dsc, LVGL_BACKGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
+    lv_draw_label_dsc_t badge_fg_dsc;
+    init_label_dsc(&badge_fg_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_CENTER);
+    const struct art_layer *layer = &art_layers[state->layer_shown];
 
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
 
@@ -52,55 +63,31 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     canvas_draw_text(canvas, 0, 24, CANVAS_SIZE, &small_dsc,
                      state->connected ? "linked" : "no link");
 
-    fill_fg(canvas, 0, 40, CANVAS_SIZE, 24);
-    canvas_draw_text(canvas, 0, 43, CANVAS_SIZE, &badge_dsc, "corne");
+    if (state->layer_held) {
+        fill_fg(canvas, 0, 40, CANVAS_SIZE, 24);
+        canvas_draw_text(canvas, 0, 43, CANVAS_SIZE, &badge_dsc, layer->name);
+    } else {
+        outline_fg(canvas, 0, 40, CANVAS_SIZE, 24, 1);
+        canvas_draw_text(canvas, 0, 43, CANVAS_SIZE, &badge_fg_dsc, layer->name);
+    }
 
     rotate_canvas(canvas);
 }
 
-static void draw_art(lv_obj_t *widget) {
+static void draw_layer(lv_obj_t *widget, const struct status_state *state) {
     lv_obj_t *middle = lv_obj_get_child(widget, 1);
     lv_obj_t *bottom = lv_obj_get_child(widget, 2);
-
-    lv_draw_label_dsc_t key_fg;
-    init_label_dsc(&key_fg, LVGL_FOREGROUND, &lv_font_unscii_8, LV_TEXT_ALIGN_CENTER);
-    lv_draw_label_dsc_t key_bg;
-    init_label_dsc(&key_bg, LVGL_BACKGROUND, &lv_font_unscii_8, LV_TEXT_ALIGN_CENTER);
-
-    // Right half of Miryoku QWERTY. Home row keys carry mods: J=Shift K=Ctrl L=Alt '=GUI
-    static const char *const keys[3][5] = {
-        {"Y", "U", "I", "O", "P"},
-        {"H", "J", "K", "L", "'"},
-        {"N", "M", ",", ".", "/"},
-    };
+    const struct art_layer *layer = &art_layers[state->layer_shown];
 
     lv_canvas_fill_bg(middle, LVGL_BACKGROUND, LV_OPA_COVER);
-    for (int r = 0; r < 3; r++) {
-        for (int c = 0; c < 5; c++) {
-            const lv_coord_t x = c * 14;
-            const lv_coord_t y = 2 + r * 14;
-            const bool mod = (r == 1 && c >= 1);
-            if (mod) {
-                fill_fg(middle, x, y, 12, 12);
-            } else {
-                outline_fg(middle, x, y, 12, 12, 1);
-            }
-            canvas_draw_text(middle, x, y + 2, 12, mod ? &key_bg : &key_fg, keys[r][c]);
-        }
-    }
-
-    // Thumb cluster (Enter / Backspace / Delete), inner side, fanned downwards
-    outline_fg(middle, 0, 47, 14, 14, 1);
-    outline_fg(middle, 16, 48, 14, 15, 1);
-    outline_fg(middle, 32, 50, 14, 16, 1);
-    fill_fg(middle, 4, 53, 6, 2);    // enter
-    fill_fg(middle, 20, 55, 6, 2);   // backspace
-    fill_fg(middle, 36, 57, 6, 2);   // delete
+    art_draw_keys(middle, layer);
     rotate_canvas(middle);
+    lv_obj_invalidate(middle);
 
     lv_canvas_fill_bg(bottom, LVGL_BACKGROUND, LV_OPA_COVER);
-    canvas_draw_text(bottom, 0, 8, CANVAS_SIZE, &key_fg, "MIRYOKU");
+    art_draw_tiny(bottom, 0, 10, CANVAS_SIZE, layer->hint, true);
     rotate_canvas(bottom);
+    lv_obj_invalidate(bottom);
 }
 
 /* ------------------------------------------------------------------ battery */
@@ -144,6 +131,11 @@ static struct peripheral_status_state get_state(const zmk_event_t *_eh) {
 static void set_connection_status(struct zmk_widget_status *widget,
                                   struct peripheral_status_state state) {
     widget->state.connected = state.connected;
+    if (!state.connected && widget->state.layer_held) { // a hold can't be released over a dead link
+        widget->state.layer_held = false;
+        widget->state.layer_shown = 0;
+        draw_layer(widget->obj, &widget->state);
+    }
     draw_top(widget->obj, &widget->state);
 }
 
@@ -155,6 +147,50 @@ static void output_status_update_cb(struct peripheral_status_state state) {
 ZMK_DISPLAY_WIDGET_LISTENER(widget_peripheral_status, struct peripheral_status_state,
                             output_status_update_cb, get_state)
 ZMK_SUBSCRIPTION(widget_peripheral_status, zmk_split_peripheral_status_changed);
+
+/* -------------------------------------------------------------- layer sync */
+
+struct layer_sync_state {
+    uint16_t active; // bit i = layer id i held (as reported by &mo_sync)
+};
+
+static uint16_t synced_layers;
+
+static struct layer_sync_state layer_sync_get_state(const zmk_event_t *eh) {
+    const struct zmk_layer_sync_changed *ev = eh ? as_zmk_layer_sync_changed(eh) : NULL;
+    if (ev && ev->layer < 16) {
+        if (ev->state) {
+            synced_layers |= BIT(ev->layer);
+        } else {
+            synced_layers &= ~BIT(ev->layer);
+        }
+    }
+    if (!zmk_split_bt_peripheral_is_connected()) {
+        synced_layers = 0;
+    }
+    return (struct layer_sync_state){.active = synced_layers};
+}
+
+static void layer_sync_update_cb(struct layer_sync_state state) {
+    uint8_t shown = 0; // highest held layer wins, like ZMK's own layer priority
+    for (int i = ART_LAYER_COUNT - 1; i > 0; i--) {
+        if (state.active & BIT(i)) {
+            shown = i;
+            break;
+        }
+    }
+    struct zmk_widget_status *widget;
+    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
+        widget->state.layer_shown = shown;
+        widget->state.layer_held = (shown != 0);
+        draw_top(widget->obj, &widget->state);
+        draw_layer(widget->obj, &widget->state);
+    }
+}
+
+ZMK_DISPLAY_WIDGET_LISTENER(widget_layer_sync, struct layer_sync_state, layer_sync_update_cb,
+                            layer_sync_get_state)
+ZMK_SUBSCRIPTION(widget_layer_sync, zmk_layer_sync_changed);
 
 /* --------------------------------------------------------------------- init */
 
@@ -171,11 +207,14 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     lv_obj_align(bottom, LV_ALIGN_TOP_LEFT, -44, 0);
     lv_canvas_set_buffer(bottom, widget->cbuf3, CANVAS_SIZE, CANVAS_SIZE, CANVAS_COLOR_FORMAT);
 
-    draw_art(widget->obj);
+    widget->state.layer_shown = 0;
+    widget->state.layer_held = false;
+    draw_layer(widget->obj, &widget->state);
 
     sys_slist_append(&widgets, &widget->node);
     widget_battery_status_init();
     widget_peripheral_status_init();
+    widget_layer_sync_init();
 
     return 0;
 }

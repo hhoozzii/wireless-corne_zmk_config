@@ -52,6 +52,8 @@ struct status_state {
     uint8_t wpm;
 #else
     bool connected;
+    uint8_t layer_shown; // Miryoku layer id drawn on the right half (0 = Base)
+    bool layer_held;
 #endif
 };
 

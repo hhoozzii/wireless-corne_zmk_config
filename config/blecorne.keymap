@@ -21,3 +21,19 @@
 // right-hand keys. Removing the 6-column layout (and its position map) rules that out.
 /delete-node/ &foostan_corne_6col_posmap;
 /delete-node/ &foostan_corne_6col_layout;
+
+// Layer holds on the thumbs (and Z / slash) use &mo_sync instead of &mo: it behaves the same,
+// but also runs on the right half so its nice!view can show the held layer (see src/behaviors/).
+/ {
+    behaviors {
+        mo_sync: mo_sync {   // node name must stay <= 8 characters (split behavior name limit)
+            compatible = "zmk,behavior-layer-sync";
+            #binding-cells = <1>;
+            display-name = "Layer (synced)";
+        };
+    };
+};
+
+&u_lt {
+    bindings = <&mo_sync>, <&kp>;
+};

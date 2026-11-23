@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Momentary layer (like &mo) that is also run on split peripherals, so they can
+  show the held layer. The layer is only activated on the central.
+
+compatible: "zmk,behavior-layer-sync"
+
+include: one_param.yaml
