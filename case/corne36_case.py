@@ -20,12 +20,12 @@ from skimage.measure import marching_cubes
 
 P = dict(
     clearance=0.7,      # gap PCB edge -> wall
-    cut_extra=1.0,      # extra room past the broken-off edge (rough cut)
-    wall=2.4,           # wall thickness (6 perimeters at 0.4)
+    cut_extra=-0.2,     # broken-off edge: the board stops at the mouse-bite line, so 0.7-0.2 = 0.5 mm gap there
+    wall=1.8,           # wall thickness (4 perimeters at 0.45)
     floor=2.0,          # floor thickness (bottom='floor')
     # --- bottom: 'acrylic' = no printed floor; a sheet fits inside the wall from below, M3 standoffs
     #     from the sheet to the PCB hold everything together. 'floor' = the earlier printed tray.
-    bottom='acrylic',
+    bottom='floor',
     acrylic_t=3.0,      # sheet thickness
     acrylic_fit=0.2,    # sheet is this much smaller than the opening it fits into
     standoff_h=5.0,     # M3 F-F standoff length = gap between sheet and PCB. 5 mm so the M3x5 from below (2 mm in)
@@ -50,8 +50,11 @@ P = dict(
     cover_t=1.0,        # thickness (wall rises 1.2 mm above the PCB, so it sits 0.2 mm below the wall top)
     cover_gap=0.3,      # gap between cover edge and case wall
     key_cut=15.6,       # square cutout per switch (Choc v2 housing passes a 15.5 mm opening)
-    cover_screw_d=3.4,  # clearance for the screws that clamp cover + PCB (M3 in the acrylic build)
+    cover_screw_d=2.4,  # clearance for the screws that clamp cover + PCB (M2; 3.4 for the M3 acrylic build)
     min_web=1.2,        # remove cover features narrower than this
+    # raised wall round the controller strip (top + inner edge) to guard the nice!view
+    display_wall=7.0,   # wall top this far above the PCB top there (keys get the normal 1.2 mm lip)
+    display_zone=(-23.0, -40.0, 10.0, 32.0),   # x0, y0, x1, y1 of the raised part (KiCad y-down); 45 deg ramps at its ends
     usb_w=13.0,         # USB-C plug opening width (typical overmold 12 mm)
     usb_floor=3.0,      # USB opening goes down to this z (plug body ~6.5 mm tall)
     pwr_w=10.0,         # power switch opening width
@@ -154,7 +157,8 @@ def build(d, p=P):
     screw = np.min([circ_sdf(X, Y, hx, hy, p['screw_d'] / 2) for hx, hy in d.get('screw_holes', holes)], 0)
     feet = np.min([circ_sdf(X, Y, fx, fy, p['foot_d'] / 2) for fx, fy in p['feet']], 0)
 
-    gz = np.arange(-1.0, z_top + 1.0, p['res_z']) + p['res_z'] * 0.43
+    z_max = z_top + (0 if acrylic else p['display_wall'] - p['lip'])
+    gz = np.arange(-1.0, z_max + 1.0, p['res_z']) + p['res_z'] * 0.43
     Z = gz[None, None, :]
     E = lambda s2, z0, z1: np.maximum(s2[..., None], np.maximum(z0 - Z, Z - z1))
 
@@ -169,18 +173,25 @@ def build(d, p=P):
         solid = np.maximum(solid, -E(pwr, z_pb - 1.0, z_top + 5))
         v, f = to_mesh(solid, gx, gy, gz, r, p['res_z'])
         return v, f, dict(z_base=z_base, z_pcb_bot=z_pb, z_pcb_top=z_pt, z_top=round(z_top, 2)), (gx, gy, gz, solid)
+    # raised wall by the display: same wall ring, taller inside display_zone, 45 deg ramp down at its ends
+    zx0, zy0, zx1, zy1 = p['display_zone']
+    inside = -box_sdf(X, Y, zx0, zx1, zy0, zy1)                       # >0 inside the zone
+    rise = np.clip(inside, 0, None)
+    z_wall = z_top + np.minimum(rise, p['display_wall'] - p['lip'])
+    ring = np.maximum(outer, -cavity)
     solid = np.maximum(solid, -E(cavity, p['floor'], z_top + 5))
+    solid = np.minimum(solid, np.maximum(ring[..., None], np.maximum(z_top - 0.5 - Z, Z - z_wall[..., None])))
     solid = np.minimum(solid, E(np.maximum(ledge, outer), 0, z_pb))
     solid = np.minimum(solid, E(shoulder, 0, z_pb))
     z_pin = z_pt - p['pin_below_top']
     rz = p['pin_d'] / 2 - np.clip(Z - (z_pin - p['pin_chamfer']), 0, None)        # chamfered pin radius
     solid = np.minimum(solid, np.maximum(pin_r[..., None] - rz, np.maximum(0 - Z, Z - z_pin)))
-    solid = np.maximum(solid, -E(usb, p['usb_floor'], z_top + 5))
-    solid = np.maximum(solid, -E(pwr, z_pb - 1.0, z_top + 5))
-    solid = np.maximum(solid, -E(screw, -5, z_top + 5))
+    solid = np.maximum(solid, -E(usb, p['usb_floor'], z_max + 5))
+    solid = np.maximum(solid, -E(pwr, z_pb - 1.0, z_max + 5))
+    solid = np.maximum(solid, -E(screw, -5, z_max + 5))
     solid = np.maximum(solid, -E(feet, -5, p['foot_depth']))
     v, f = to_mesh(solid, gx, gy, gz, r, p['res_z'])
-    return v, f, dict(z_pcb_bot=z_pb, z_pcb_top=z_pt, z_top=round(z_top, 2)), (gx, gy, gz, solid)
+    return v, f, dict(z_pcb_bot=z_pb, z_pcb_top=z_pt, z_top=round(z_top, 2), z_display_wall=round(z_max, 2)), (gx, gy, gz, solid)
 
 
 def build_fit_test(d, p=P, t=0.8):
