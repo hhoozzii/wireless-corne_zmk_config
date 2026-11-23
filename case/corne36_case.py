@@ -22,7 +22,17 @@ P = dict(
     clearance=0.7,      # gap PCB edge -> wall
     cut_extra=1.0,      # extra room past the broken-off edge (rough cut)
     wall=2.4,           # wall thickness (6 perimeters at 0.4)
-    floor=2.0,          # floor thickness
+    floor=2.0,          # floor thickness (bottom='floor')
+    # --- bottom: 'acrylic' = no printed floor; a sheet fits inside the wall from below, M3 standoffs
+    #     from the sheet to the PCB hold everything together. 'floor' = the earlier printed tray.
+    bottom='acrylic',
+    acrylic_t=3.0,      # sheet thickness
+    acrylic_fit=0.2,    # sheet is this much smaller than the opening it fits into
+    standoff_h=5.0,     # M3 F-F standoff length = gap between sheet and PCB. 5 mm so the M3x5 from below (2 mm in)
+                        # and the M3x4 from above (2.4 mm in) don't meet at the two clamp holes
+    standoff_d=5.0,     # round M3 standoff diameter (keepout drawn in the previews)
+    acrylic_hole_d=3.2, # M3 screw holes in the sheet at the standoffs
+    stop_h=1.0,         # strip round the inside of the wall just above the sheet: the sheet stops against it
     under_pcb=3.5,      # space under PCB for hotswap sockets, switch posts, nRF module
     pcb=1.6,
     lip=1.2,            # wall height above PCB top (hides the cut; keycaps clear it)
@@ -40,7 +50,7 @@ P = dict(
     cover_t=1.0,        # thickness (wall rises 1.2 mm above the PCB, so it sits 0.2 mm below the wall top)
     cover_gap=0.3,      # gap between cover edge and case wall
     key_cut=15.6,       # square cutout per switch (Choc v2 housing passes a 15.5 mm opening)
-    cover_screw_d=2.4,  # clearance for the M2 screws, which clamp cover + PCB
+    cover_screw_d=3.4,  # clearance for the screws that clamp cover + PCB (M3 in the acrylic build)
     min_web=1.2,        # remove cover features narrower than this
     usb_w=13.0,         # USB-C plug opening width (typical overmold 12 mm)
     usb_floor=3.0,      # USB opening goes down to this z (plug body ~6.5 mm tall)
@@ -106,7 +116,10 @@ def signed_volume(v, f):
 # ---------------------------------------------------------------- case
 def build(d, p=P):
     pcb = d['outline']; notch = np.array(d['notch'])
-    z_pb = p['floor'] + p['under_pcb']; z_pt = z_pb + p['pcb']; z_top = z_pt + p['lip']
+    acrylic = p.get('bottom') == 'acrylic'
+    z_base = p['acrylic_t'] if acrylic else p['floor']               # top of the floor / sheet
+    z_pb = z_base + (p['standoff_h'] if acrylic else p['under_pcb'])
+    z_pt = z_pb + p['pcb']; z_top = z_pt + p['lip']
     r = p['res_xy']
     gx, gy, X, Y = grid_for(pcb, p['clearance'] + p['wall'] + p['cut_extra'] + 3, r)
 
@@ -146,6 +159,16 @@ def build(d, p=P):
     E = lambda s2, z0, z1: np.maximum(s2[..., None], np.maximum(z0 - Z, Z - z1))
 
     solid = E(outer, 0, z_top)
+    if acrylic:
+        # open frame: the sheet slides in from below under the lip and the stop strip
+        solid = np.maximum(solid, -E(cavity, -5, z_top + 5))
+        solid = np.minimum(solid, E(np.maximum(ledge, outer), z_base, z_pb))          # lip the PCB rests on
+        gap = np.maximum(cavity, -s_pcb)                                             # outside the PCB footprint
+        solid = np.minimum(solid, E(np.maximum(gap, outer), z_base, z_base + p['stop_h']))
+        solid = np.maximum(solid, -E(usb, z_pb - 2.5, z_top + 5))
+        solid = np.maximum(solid, -E(pwr, z_pb - 1.0, z_top + 5))
+        v, f = to_mesh(solid, gx, gy, gz, r, p['res_z'])
+        return v, f, dict(z_base=z_base, z_pcb_bot=z_pb, z_pcb_top=z_pt, z_top=round(z_top, 2)), (gx, gy, gz, solid)
     solid = np.maximum(solid, -E(cavity, p['floor'], z_top + 5))
     solid = np.minimum(solid, E(np.maximum(ledge, outer), 0, z_pb))
     solid = np.minimum(solid, E(shoulder, 0, z_pb))
@@ -215,6 +238,69 @@ def build_cover(d, p=P):
     return to_mesh(solid, gx, gy, gz, r, 0.1), (gx, gy, shape)
 
 
+# ---------------------------------------------------------------- acrylic sheet (2D, laser cut)
+def build_sheet(d, p=P, r=0.1):
+    """Sheet outline = board (+ rough-cut allowance) grown by clearance - acrylic_fit, so it drops inside the
+    frame wall with acrylic_fit all round; M3 holes at every mounting hole. Returns (outline, holes) in
+    y-up mm, same x/y as the STL. The shape is flat, so one cut file serves both halves: flip one over."""
+    from skimage.measure import find_contours
+    gx, gy, X, Y = grid_for(d['outline'], 3, r)
+    s_pcb = poly_sdf(d['outline'], X, Y)
+    (cx0, cy0), (cx1, cy1) = d['cut']; xcut = min(cx0, cx1)
+    cutzone = box_sdf(X, Y, xcut - p['cut_extra'], xcut + 4, min(cy0, cy1) + 1.0, max(cy0, cy1) - 1.0)
+    sheet = np.minimum(s_pcb, cutzone) - (p['clearance'] - p['acrylic_fit'])
+    cs = find_contours(sheet, 0.0)
+    c = max(cs, key=len)
+    pts = np.column_stack([gx[0] + c[:, 0] * r, gy[0] + c[:, 1] * r])      # array axes are (x, y)
+    pts = dp_simplify(pts, 0.01)
+    pts[:, 1] *= -1
+    holes = [(hx, -hy, p['acrylic_hole_d'] / 2) for hx, hy in d['holes']]
+    return pts, holes
+
+
+def dp_simplify(pts, tol):
+    if np.allclose(pts[0], pts[-1]):                     # closed ring: split at the point farthest from the start
+        pts = pts[:-1]; k = int(np.argmax(np.hypot(*(pts - pts[0]).T)))
+        a, b = dp_simplify(pts[:k + 1], tol), dp_simplify(np.vstack([pts[k:], pts[:1]]), tol)
+        return np.vstack([a[:-1], b])                    # b ends at pts[0] -> ring closed again
+    keep = np.zeros(len(pts), bool); keep[0] = keep[-1] = True
+    stack = [(0, len(pts) - 1)]
+    while stack:
+        i, j = stack.pop()
+        if j <= i + 1: continue
+        a, b = pts[i], pts[j]; ab = b - a; L = np.hypot(*ab) + 1e-12
+        dd = np.abs(ab[0] * (pts[i + 1:j, 1] - a[1]) - ab[1] * (pts[i + 1:j, 0] - a[0])) / L
+        k = int(np.argmax(dd))
+        if dd[k] > tol:
+            keep[i + 1 + k] = True; stack += [(i, i + 1 + k), (i + 1 + k, j)]
+    return pts[keep]
+
+
+def write_dxf(path, outline, holes):
+    """Plain R12 DXF, millimetres: one closed POLYLINE + CIRCLEs on layer CUT."""
+    L = ['0', 'SECTION', '2', 'HEADER', '9', '$ACADVER', '1', 'AC1009', '9', '$INSUNITS', '70', '4', '0', 'ENDSEC',
+         '0', 'SECTION', '2', 'ENTITIES',
+         '0', 'POLYLINE', '8', 'CUT', '66', '1', '70', '1', '10', '0', '20', '0', '30', '0']
+    for x, y in outline[:-1] if np.allclose(outline[0], outline[-1]) else outline:
+        L += ['0', 'VERTEX', '8', 'CUT', '10', f'{x:.4f}', '20', f'{y:.4f}', '30', '0']
+    L += ['0', 'SEQEND', '8', 'CUT']
+    for x, y, rr in holes:
+        L += ['0', 'CIRCLE', '8', 'CUT', '10', f'{x:.4f}', '20', f'{y:.4f}', '30', '0', '40', f'{rr:.4f}']
+    L += ['0', 'ENDSEC', '0', 'EOF']
+    open(path, 'w').write('\n'.join(L) + '\n')
+
+
+def write_svg(path, outline, holes, margin=2.0):
+    x0, y0 = outline.min(0) - margin; x1, y1 = outline.max(0) + margin
+    w, h = x1 - x0, y1 - y0
+    tx = lambda x, y: (x - x0, y1 - y)                                       # SVG y points down
+    d = 'M ' + ' L '.join('%.4f,%.4f' % tx(x, y) for x, y in outline) + ' Z'
+    circ = ''.join('<circle cx="%.4f" cy="%.4f" r="%.4f"/>' % (*tx(x, y), rr) for x, y, rr in holes)
+    open(path, 'w').write(
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w:.3f}mm" height="{h:.3f}mm" viewBox="0 0 {w:.3f} {h:.3f}">'
+        f'<g fill="none" stroke="#ff0000" stroke-width="0.1"><path d="{d}"/>{circ}</g></svg>\n')
+
+
 # ---------------------------------------------------------------- output
 def mirror_x(v, f):
     v = v.copy(); v[:, 0] *= -1
@@ -276,6 +362,13 @@ if __name__ == '__main__':
     np.savez_compressed(os.path.join(outdir, '_cover2d.npz'), gx=cgrid[0], gy=cgrid[1], shape=cgrid[2])
     write_stl(os.path.join(outdir, 'corne36_cover_half.stl'), cv, cf, 'corne36 top cover half')
     write_3mf(os.path.join(outdir, 'corne36_cover_half.3mf'), [('corne36 top cover half', cv, cf)])
+    if P.get('bottom') == 'acrylic':
+        so, sh = build_sheet(d)
+        tag = 'corne36_acrylic_%gmm' % P['acrylic_t']
+        write_dxf(os.path.join(outdir, tag + '.dxf'), so, sh)
+        write_svg(os.path.join(outdir, tag + '.svg'), so, sh)
+        meta['sheet_bbox'] = [so.min(0).round(2).tolist(), so.max(0).round(2).tolist()]
+        meta['sheet_vertices'] = len(so)
     info = dict(meta=meta, tris=len(f), bbox=[v.min(0).round(2).tolist(), v.max(0).round(2).tolist()], fit_tris=len(tf), cover_tris=len(cf))
     json.dump(dict(info, params=P), open(os.path.join(outdir, 'build_info.json'), 'w'), indent=1)
     print(json.dumps(info))
