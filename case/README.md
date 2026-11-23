@@ -17,9 +17,9 @@ mirrored in the slicer for the other side (same for the fit-test frame).
 * **Print `corne36_fit_test_half.3mf` first** (0.8 mm frame with the case's pins, ~10 min): lower the PCB onto it
   bottom-side down. The pins should drop into the mounting holes and the board edge should sit inside the rim.
 * **Case** `corne36_case_half.3mf`: ~120 x 97 mm, 8.3 mm high, 14.1 mm at the display. Print floor-down, no supports, ~30 g PLA.
-  * 1.8 mm walls (4 perimeters at 0.45 mm).
+  * 1.8 mm walls (4 perimeters at 0.45 mm) with fully rounded tops (0.9 mm radius, `wall_round`).
   * The wall round the controller strip (top edge and inner edge, alongside the nice!view) rises to 7 mm above the
-    PCB top to guard the display, with 45 degree ramps down to the normal wall at both ends. The USB-C slot goes
+    PCB top to guard the display, with smooth S-shaped ramps (10 mm long) down to the normal wall at both ends. The USB-C slot goes
     through it full height. Set `display_wall` / `display_zone` to change it.
   * The mounting holes are ~4.2-4.8 mm (no grommets), so every hole gets a 3.6 mm **locating pin** with a
     5.4 mm shoulder under the PCB (clear of the socket tabs). The pin stops 0.3 mm below the PCB top.

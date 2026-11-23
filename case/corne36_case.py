@@ -54,7 +54,9 @@ P = dict(
     min_web=1.2,        # remove cover features narrower than this
     # raised wall round the controller strip (top + inner edge) to guard the nice!view
     display_wall=7.0,   # wall top this far above the PCB top there (keys get the normal 1.2 mm lip)
-    display_zone=(-23.0, -40.0, 10.0, 32.0),   # x0, y0, x1, y1 of the raised part (KiCad y-down); 45 deg ramps at its ends
+    display_zone=(-25.0, -40.0, 10.0, 34.0),   # x0, y0, x1, y1 of the raised part (KiCad y-down)
+    ramp_len=10.0,      # smooth S-shaped ramp (cosine, radiused at both ends) from the normal wall up to display_wall
+    wall_round=0.9,     # radius on the wall top edges (0.9 with a 1.8 mm wall = fully rounded top)
     usb_w=13.0,         # USB-C plug opening width (typical overmold 12 mm)
     usb_floor=3.0,      # USB opening goes down to this z (plug body ~6.5 mm tall)
     pwr_w=10.0,         # power switch opening width
@@ -173,14 +175,18 @@ def build(d, p=P):
         solid = np.maximum(solid, -E(pwr, z_pb - 1.0, z_top + 5))
         v, f = to_mesh(solid, gx, gy, gz, r, p['res_z'])
         return v, f, dict(z_base=z_base, z_pcb_bot=z_pb, z_pcb_top=z_pt, z_top=round(z_top, 2)), (gx, gy, gz, solid)
-    # raised wall by the display: same wall ring, taller inside display_zone, 45 deg ramp down at its ends
+    # raised wall by the display: same wall ring, taller inside display_zone, S-curve ramps at its ends
     zx0, zy0, zx1, zy1 = p['display_zone']
     inside = -box_sdf(X, Y, zx0, zx1, zy0, zy1)                       # >0 inside the zone
-    rise = np.clip(inside, 0, None)
-    z_wall = z_top + np.minimum(rise, p['display_wall'] - p['lip'])
+    t = np.clip(inside / p['ramp_len'], 0, 1)
+    z_wall = z_top + (p['display_wall'] - p['lip']) * (1 - np.cos(np.pi * t)) / 2
     ring = np.maximum(outer, -cavity)
     solid = np.maximum(solid, -E(cavity, p['floor'], z_top + 5))
     solid = np.minimum(solid, np.maximum(ring[..., None], np.maximum(z_top - 0.5 - Z, Z - z_wall[..., None])))
+    # rounded wall top: drop the top by a circular profile across the wall thickness
+    R = p['wall_round']; dep = np.clip(-ring, 0, R)
+    z_round = z_wall - (R - np.sqrt(np.clip(R * R - (R - dep) ** 2, 0, None)))
+    solid = np.maximum(solid, Z - z_round[..., None])
     solid = np.minimum(solid, E(np.maximum(ledge, outer), 0, z_pb))
     solid = np.minimum(solid, E(shoulder, 0, z_pb))
     z_pin = z_pt - p['pin_below_top']
