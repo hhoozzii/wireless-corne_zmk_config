@@ -8,8 +8,7 @@ columns cut off: the keymaps use the board's 5-column layout (`foostan_corne_5co
 include `mapping/42/corne.h` and `&foostan_corne_6col_layout` instead.)
 
 * Layout options: `config/miryoku/custom_config.h` (alphas, Mac clipboard, vi nav, flip...)
-* Boardsource Wireless Corne SMT: `config/blecorne.keymap` / `blecorne.conf`
-* Classic Corne on nice!nano v2: `config/corne.keymap` / `corne.conf`
+* Keymap and settings: `config/blecorne.keymap` / `blecorne.conf` (Boardsource Wireless Corne SMT)
 * nice!view displays use a **custom status screen** (`boards/shields/nice_view_custom/`, preview in `docs/nice_view_preview.png`):
   * Left: battery and output (USB, BLE connected, BLE disconnected, or pairing), the Miryoku layer name, ten layer pips
     (filled = on, underline = current), held home-row mods **G A C S**, BLE profiles 1-5
@@ -21,10 +20,10 @@ include `mapping/42/corne.h` and `&foostan_corne_6col_layout` instead.)
 **Getting firmware:** every push runs GitHub Actions. (On a fork, Actions stays off until you open the
 Actions tab and click "I understand my workflows, go ahead and enable them"; after that use
 "Run workflow" or push any change.) Open the Actions tab, pick the latest run,
-download the `firmware` artifact and unzip it. Flash only the pair for your hardware:
-`blecorne_left` / `blecorne_right` for the Boardsource PCB, or `corne_left` / `corne_right`
-(nice_nano) for nice!nanos. Double-tap reset to mount the USB drive, then copy the `.uf2` onto it.
-Flash `settings_reset` to both halves first if they don't pair with each other.
+download the `firmware` artifact and unzip it. It has three files: `blecorne_left` (left half),
+`blecorne_right` (right half) and `settings_reset` (works on both halves). Double-tap reset to mount
+the USB drive, then copy the `.uf2` onto it. Coming from other firmware (or if the halves don't pair
+with each other), flash `settings_reset` to both halves first, then the normal files.
 
 ---
 

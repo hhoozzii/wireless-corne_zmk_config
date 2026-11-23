@@ -1,42 +1,23 @@
-# Miryoku (QWERTY) firmware builds.
+# Miryoku (QWERTY) firmware for the Boardsource Wireless Corne SMT (36 keys).
 #
-# Boardsource Wireless Corne SMT (controller built into the PCB):
-#   flash the blecorne_left file -> left half, blecorne_right -> right half
+# Flash:
+#   blecorne_left  -> left half  (the "central" that talks to your computer; ZMK Studio runs here over USB)
+#   blecorne_right -> right half
 #
-# Classic Corne with nice!nano v2 controllers:
-#   flash the corne_left file -> left half, corne_right -> right half
-#
-# Flash only the pair that matches your hardware. The left half is the "central"
-# that talks to your computer; ZMK Studio runs over USB on the left half.
+# settings_reset clears saved settings (ZMK Studio keymap/layout choice, Bluetooth pairings).
+# The one file works on BOTH halves: flash it to each half, then flash the normal files again.
+# Needed once when coming from other firmware, or if the halves stop pairing with each other or a host.
 #
 # nice!view displays use the custom screen in boards/shields/nice_view_custom
 # (left: layer, held mods, BLE profiles, WPM; right: battery, link, key map art).
 ---
 include:
-  # --- Boardsource Wireless Corne SMT ---
   - board: blecorne_left
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
     shield: nice_view_custom
   - board: blecorne_right
     shield: nice_view_custom
-
-  # --- Classic Corne + nice!nano v2 ---
-  - board: nice_nano//zmk
-    shield: corne_left nice_view_adapter nice_view_custom
-    snippet: studio-rpc-usb-uart
-    cmake-args: -DCONFIG_ZMK_STUDIO=y
-  - board: nice_nano//zmk
-    shield: corne_right nice_view_adapter nice_view_custom
-
-  # --- Settings reset ---
-  # Clears saved settings (ZMK Studio keymap/layout choice, Bluetooth pairings).
-  # The blecorne_left settings_reset file works on BOTH Boardsource halves: flash it to
-  # each half, then flash the normal blecorne_left / blecorne_right files again.
-  # Needed once when coming from other firmware (e.g. Boardsource's stock 42-key firmware),
-  # or if the halves stop pairing with each other or a host.
   - board: blecorne_left
     shield: settings_reset
     cmake-args: -DCONFIG_ZMK_DISPLAY=n   # blecorne.conf enables the display; no screen in this build
-  - board: nice_nano//zmk
-    shield: settings_reset
