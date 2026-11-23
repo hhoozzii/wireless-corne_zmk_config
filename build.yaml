@@ -30,8 +30,11 @@ include:
     shield: corne_right nice_view_adapter nice_view_custom
 
   # --- Settings reset ---
-  # Flash to both halves if they stop pairing with each other or a host,
-  # then flash the normal firmware again.
+  # Clears saved settings (ZMK Studio keymap/layout choice, Bluetooth pairings).
+  # The blecorne_left settings_reset file works on BOTH Boardsource halves: flash it to
+  # each half, then flash the normal blecorne_left / blecorne_right files again.
+  # Needed once when coming from other firmware (e.g. Boardsource's stock 42-key firmware),
+  # or if the halves stop pairing with each other or a host.
   - board: blecorne_left
     shield: settings_reset
     cmake-args: -DCONFIG_ZMK_DISPLAY=n   # blecorne.conf enables the display; no screen in this build
